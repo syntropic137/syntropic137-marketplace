@@ -12,6 +12,14 @@
       "description": "AI-powered code review on pull requests",
       "category": "sdlc",
       "tags": ["code-review", "pull-request", "quality"]
+    },
+    {
+      "name": "sdlc-trunk",
+      "source": "./plugins/sdlc-trunk",
+      "version": "0.1.0",
+      "description": "Full trunk-based development lifecycle — PR review, CI self-healing, and release preparation",
+      "category": "sdlc",
+      "tags": ["sdlc", "trunk-based", "ci-cd", "release", "code-review", "self-healing"]
     }
   ]
 }

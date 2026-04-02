@@ -1,0 +1,62 @@
+id: sdlc-release-prep
+name: "Release Preparation"
+description: "Prepare release notes, validate changelog, and verify release readiness"
+type: deployment
+classification: standard
+
+repository:
+  url: "https://github.com/{{repository}}"
+  ref: "{{tag}}"
+
+inputs:
+  - name: repository
+    description: "Repository in owner/repo format"
+    required: true
+  - name: tag
+    description: "Release tag (e.g., v1.2.0)"
+    required: true
+  - name: previous_tag
+    description: "Previous release tag for comparison"
+    required: false
+  - name: release_name
+    description: "Release title"
+    required: false
+  - name: draft
+    description: "Whether this is a draft release"
+    required: false
+    default: "false"
+
+phases:
+  - id: audit
+    name: "Release Audit"
+    order: 1
+    execution_type: sequential
+    prompt_file: phases/audit.md
+    max_tokens: 16384
+    timeout_seconds: 600
+    allowed_tools:
+      - bash
+      - git
+      - read
+
+  - id: notes
+    name: "Generate Release Notes"
+    order: 2
+    execution_type: sequential
+    prompt_file: phases/notes.md
+    max_tokens: 8192
+    timeout_seconds: 300
+    allowed_tools:
+      - bash
+      - git
+
+  - id: publish
+    name: "Finalize Release"
+    order: 3
+    execution_type: sequential
+    prompt_file: phases/publish.md
+    max_tokens: 4096
+    timeout_seconds: 120
+    allowed_tools:
+      - bash
+      - git

@@ -20,9 +20,10 @@ syn workflow run code-review --input pr_number=42 --input repository=myorg/myrep
 
 ## Available Plugins
 
-| Plugin | Description | Category |
-|--------|-------------|----------|
-| [code-review](plugins/code-review/) | AI-powered code review on pull requests | sdlc |
+| Plugin | Description | Workflows | Category |
+|--------|-------------|-----------|----------|
+| [code-review](plugins/code-review/) | AI-powered code review on pull requests | 1 | sdlc |
+| [sdlc-trunk](plugins/sdlc-trunk/) | Full trunk-based dev lifecycle — PR review, CI self-healing, release prep | 3 | sdlc |
 
 ## Plugin Structure
 

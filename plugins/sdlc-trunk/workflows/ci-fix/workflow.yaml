@@ -1,0 +1,63 @@
+id: sdlc-ci-fix
+name: "CI Self-Healing"
+description: "Automatically diagnose and fix CI failures on pull requests"
+type: implementation
+classification: simple
+
+repository:
+  url: "https://github.com/{{repository}}"
+  ref: "{{branch}}"
+
+inputs:
+  - name: pr_number
+    description: "Pull request number with the failing CI"
+    required: true
+  - name: repository
+    description: "Repository in owner/repo format"
+    required: true
+  - name: branch
+    description: "Branch with the failure"
+    required: true
+  - name: check_run_name
+    description: "Name of the failed check run"
+    required: false
+  - name: check_run_id
+    description: "GitHub check run ID for fetching logs"
+    required: false
+
+phases:
+  - id: diagnose
+    name: "Diagnose Failure"
+    order: 1
+    execution_type: sequential
+    prompt_file: phases/diagnose.md
+    max_tokens: 16384
+    timeout_seconds: 600
+    allowed_tools:
+      - bash
+      - git
+      - read
+
+  - id: fix
+    name: "Apply Fix"
+    order: 2
+    execution_type: sequential
+    prompt_file: phases/fix.md
+    max_tokens: 16384
+    timeout_seconds: 600
+    allowed_tools:
+      - bash
+      - git
+      - read
+      - edit
+
+  - id: verify
+    name: "Verify Fix"
+    order: 3
+    execution_type: sequential
+    prompt_file: phases/verify.md
+    max_tokens: 8192
+    timeout_seconds: 300
+    allowed_tools:
+      - bash
+      - git

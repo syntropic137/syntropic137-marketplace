@@ -1,0 +1,30 @@
+{
+  "triggers": [
+    {
+      "name": "on-pr-opened",
+      "description": "Review pull requests when opened or updated with new commits",
+      "event": "pull_request",
+      "conditions": [
+        {
+          "field": "action",
+          "operator": "in",
+          "value": ["opened", "synchronize"]
+        }
+      ],
+      "input_mapping": {
+        "pr_number": "pull_request.number",
+        "branch": "pull_request.head.ref",
+        "base_branch": "pull_request.base.ref",
+        "repository": "repository.full_name",
+        "title": "pull_request.title",
+        "author": "pull_request.user.login"
+      },
+      "config": {
+        "max_attempts": 2,
+        "cooldown_seconds": 300,
+        "daily_limit": 30,
+        "budget_per_trigger_usd": 3.00
+      }
+    }
+  ]
+}
