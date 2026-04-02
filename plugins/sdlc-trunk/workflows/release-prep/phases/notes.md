@@ -1,8 +1,6 @@
 ---
 model: sonnet
 allowed-tools: bash, git
-timeout-seconds: 300
-max-tokens: 8192
 ---
 
 You are generating release notes for {{tag}} of {{repository}}.

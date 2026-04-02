@@ -1,8 +1,6 @@
 ---
 model: haiku
 allowed-tools: bash, git
-timeout-seconds: 120
-max-tokens: 4096
 ---
 
 You are finalizing release {{tag}} of {{repository}}.

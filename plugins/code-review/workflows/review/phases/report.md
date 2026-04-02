@@ -1,8 +1,6 @@
 ---
 model: sonnet
 allowed-tools: bash, git
-timeout-seconds: 300
-max-tokens: 8192
 ---
 
 You are writing a code review report for PR #{{pr_number}} on {{repository}}.

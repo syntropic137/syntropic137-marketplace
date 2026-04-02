@@ -16,12 +16,6 @@
         "tag": "release.tag_name",
         "release_name": "release.name",
         "draft": "release.draft"
-      },
-      "config": {
-        "max_attempts": 1,
-        "cooldown_seconds": 600,
-        "daily_limit": 5,
-        "budget_per_trigger_usd": 2.00
       }
     }
   ]

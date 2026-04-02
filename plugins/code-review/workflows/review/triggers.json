@@ -16,12 +16,6 @@
         "branch": "pull_request.head.ref",
         "repository": "repository.full_name",
         "title": "pull_request.title"
-      },
-      "config": {
-        "max_attempts": 3,
-        "cooldown_seconds": 300,
-        "daily_limit": 20,
-        "budget_per_trigger_usd": 2.00
       }
     }
   ]

@@ -1,8 +1,6 @@
 ---
 model: haiku
 allowed-tools: bash, git
-timeout-seconds: 300
-max-tokens: 8192
 ---
 
 You are verifying a CI fix for PR #{{pr_number}} in {{repository}}.

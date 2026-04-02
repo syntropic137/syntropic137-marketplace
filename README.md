@@ -57,8 +57,6 @@ plugins/<name>/
 ---
 model: sonnet                    # Claude model (sonnet, opus, haiku)
 allowed-tools: bash, git, read   # Tools available to the agent
-timeout-seconds: 600             # Phase timeout
-max-tokens: 16384                # Max output tokens
 argument-hint: "[description]"   # Claude Code argument hint
 ---
 ```

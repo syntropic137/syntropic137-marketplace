@@ -28,8 +28,6 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/analyze.md
-    max_tokens: 16384
-    timeout_seconds: 600
     allowed_tools:
       - bash
       - git
@@ -40,8 +38,6 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/report.md
-    max_tokens: 8192
-    timeout_seconds: 300
     allowed_tools:
       - bash
       - git

@@ -1,8 +1,6 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read
-timeout-seconds: 600
-max-tokens: 16384
 ---
 
 You are auditing release {{tag}} of {{repository}} for readiness.

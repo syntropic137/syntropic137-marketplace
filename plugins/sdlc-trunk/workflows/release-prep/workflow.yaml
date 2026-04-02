@@ -32,8 +32,6 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/audit.md
-    max_tokens: 16384
-    timeout_seconds: 600
     allowed_tools:
       - bash
       - git
@@ -44,8 +42,6 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/notes.md
-    max_tokens: 8192
-    timeout_seconds: 300
     allowed_tools:
       - bash
       - git
@@ -55,8 +51,6 @@ phases:
     order: 3
     execution_type: sequential
     prompt_file: phases/publish.md
-    max_tokens: 4096
-    timeout_seconds: 120
     allowed_tools:
       - bash
       - git

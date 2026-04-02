@@ -1,8 +1,6 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read, edit
-timeout-seconds: 600
-max-tokens: 16384
 ---
 
 You are fixing a CI failure on PR #{{pr_number}} in {{repository}}.

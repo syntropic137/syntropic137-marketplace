@@ -1,8 +1,6 @@
 ---
 model: haiku
 allowed-tools: bash, git, read
-timeout-seconds: 300
-max-tokens: 8192
 ---
 
 You are preparing context for a code review of PR #{{pr_number}} on {{repository}}.

@@ -26,13 +26,6 @@
         "branch": "check_run.head_branch",
         "check_run_name": "check_run.name",
         "check_run_id": "check_run.id"
-      },
-      "config": {
-        "max_attempts": 2,
-        "cooldown_seconds": 600,
-        "daily_limit": 10,
-        "budget_per_trigger_usd": 5.00,
-        "debounce_seconds": 30
       }
     }
   ]
