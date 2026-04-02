@@ -1,0 +1,47 @@
+id: code-review
+name: "Code Review"
+description: "Analyze a pull request and provide actionable review feedback"
+type: review
+classification: simple
+
+repository:
+  url: "https://github.com/{{repository}}"
+  ref: "{{branch}}"
+
+inputs:
+  - name: pr_number
+    description: "Pull request number to review"
+    required: true
+  - name: repository
+    description: "Repository in owner/repo format"
+    required: true
+  - name: branch
+    description: "Head branch of the pull request"
+    required: true
+  - name: title
+    description: "Pull request title for context"
+    required: false
+
+phases:
+  - id: analyze
+    name: "Analyze Changes"
+    order: 1
+    execution_type: sequential
+    prompt_file: phases/analyze.md
+    max_tokens: 16384
+    timeout_seconds: 600
+    allowed_tools:
+      - bash
+      - git
+      - read
+
+  - id: report
+    name: "Write Review"
+    order: 2
+    execution_type: sequential
+    prompt_file: phases/report.md
+    max_tokens: 8192
+    timeout_seconds: 300
+    allowed_tools:
+      - bash
+      - git

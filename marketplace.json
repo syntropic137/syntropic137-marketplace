@@ -1,0 +1,17 @@
+{
+  "name": "syntropic137-marketplace",
+  "syntropic137": {
+    "type": "workflow-marketplace",
+    "min_platform_version": "0.18.0"
+  },
+  "plugins": [
+    {
+      "name": "code-review",
+      "source": "./plugins/code-review",
+      "version": "0.1.0",
+      "description": "AI-powered code review on pull requests",
+      "category": "sdlc",
+      "tags": ["code-review", "pull-request", "quality"]
+    }
+  ]
+}

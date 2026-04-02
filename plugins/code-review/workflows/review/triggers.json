@@ -1,0 +1,28 @@
+{
+  "triggers": [
+    {
+      "name": "on-pr-opened",
+      "description": "Run code review when a pull request is opened or updated",
+      "event": "pull_request",
+      "conditions": [
+        {
+          "field": "action",
+          "operator": "in",
+          "value": ["opened", "synchronize"]
+        }
+      ],
+      "input_mapping": {
+        "pr_number": "pull_request.number",
+        "branch": "pull_request.head.ref",
+        "repository": "repository.full_name",
+        "title": "pull_request.title"
+      },
+      "config": {
+        "max_attempts": 3,
+        "cooldown_seconds": 300,
+        "daily_limit": 20,
+        "budget_per_trigger_usd": 2.00
+      }
+    }
+  ]
+}
