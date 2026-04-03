@@ -39,12 +39,12 @@ The marketplace declares which platform version it targets in `marketplace.json`
 ```json
 {
   "syntropic137": {
-    "min_platform_version": "0.18.0"
+    "min_platform_version": "0.19.7"
   }
 }
 ```
 
-CI fetches schemas from the core repo at the **matching git tag** (`v0.18.0`). When the platform releases new schemas:
+CI fetches schemas from the core repo at the **matching git tag** (`v0.19.7`). When the platform releases new schemas:
 
 1. Update `min_platform_version` in `marketplace.json`
 2. Fix any validation errors from the new schemas
@@ -56,7 +56,7 @@ This ensures your marketplace is always validated against the schemas for the pl
 
 ```bash
 # Fetch schemas (same as CI)
-SCHEMA_VERSION="v0.18.0"  # match your min_platform_version
+SCHEMA_VERSION="v0.19.7"  # match your min_platform_version
 SCHEMA_BASE="https://raw.githubusercontent.com/syntropic137/syntropic137/${SCHEMA_VERSION}/schemas/plugin"
 mkdir -p .schemas
 for s in marketplace.schema.json plugin-manifest.schema.json workflow.schema.json triggers.schema.json phase-frontmatter.schema.json; do
@@ -137,17 +137,11 @@ python3 -c "import yaml,json,sys; json.dump(yaml.safe_load(open('plugins/my-plug
        ],
        "input_mapping": {
          "repository": "repository.full_name"
-       },
-       "config": {
-         "max_attempts": 3,
-         "cooldown_seconds": 300,
-         "daily_limit": 20,
-         "budget_per_trigger_usd": 2.00
        }
      }]
    }
    ```
-   > **Always include a `config` section** with safety limits to prevent runaway triggers.
+   > **Note:** Triggers in the marketplace are *examples* showing which events and conditions a plugin supports. Safety guardrails (max fires, cooldown, budget) are configured by the user when they register a trigger at runtime via `syn triggers register`.
 
 6. **Register in `marketplace.json`:**
    ```json
@@ -190,16 +184,13 @@ syn workflow install my-plugin
 
 ## Trigger Safety
 
-All triggers **should** include a `config` section with safety limits:
+Marketplace triggers define **what events and conditions** a plugin responds to, not how aggressively it runs. Safety guardrails — max attempts, cooldown, daily limits, budget caps — are **runtime configuration** that users set per-trigger when they register via `syn triggers register`.
 
-| Field | Purpose | Recommended |
-|-------|---------|-------------|
-| `max_attempts` | Max trigger fires per event | 2-3 |
-| `cooldown_seconds` | Minimum gap between fires | 300 (5 min) |
-| `daily_limit` | Max fires per day | 20-50 |
-| `budget_per_trigger_usd` | Cost cap per trigger fire | $2-5 |
+This separation means:
+- **Marketplace authors** focus on correct event matching and input mapping.
+- **Users** choose guardrails appropriate for their environment and budget.
 
-Triggers without safety config can run away if misconfigured. The platform enforces these limits at runtime.
+See `syn triggers register --help` for the full set of configurable safety options.
 
 ## License
 
