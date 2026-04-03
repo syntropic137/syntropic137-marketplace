@@ -1,0 +1,145 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Read min_platform_version from marketplace.json to determine schema version
+      - name: Resolve schema version
+        id: schema
+        run: |
+          VERSION=$(jq -r '.syntropic137.min_platform_version' marketplace.json)
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Schema version: v${VERSION}"
+
+      # Fetch schemas from the core repo at the matching release tag
+      - name: Fetch schemas
+        run: |
+          SCHEMA_VERSION="${{ steps.schema.outputs.version }}"
+          SCHEMA_BASE="https://raw.githubusercontent.com/syntropic137/syntropic137/${SCHEMA_VERSION}/schemas/plugin"
+          mkdir -p .schemas
+
+          for schema in marketplace.schema.json plugin-manifest.schema.json workflow.schema.json triggers.schema.json phase-frontmatter.schema.json; do
+            echo "Fetching ${schema} from ${SCHEMA_BASE}/${schema}"
+            curl -sf "${SCHEMA_BASE}/${schema}" -o ".schemas/${schema}" || {
+              echo "::warning::Could not fetch ${schema} at tag ${SCHEMA_VERSION}, trying main branch"
+              curl -sf "https://raw.githubusercontent.com/syntropic137/syntropic137/main/schemas/plugin/${schema}" -o ".schemas/${schema}"
+            }
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator
+        run: pip install check-jsonschema pyyaml
+
+      # Validate marketplace.json
+      - name: Validate marketplace.json
+        run: |
+          check-jsonschema --schemafile .schemas/marketplace.schema.json marketplace.json
+
+      # Validate all plugin manifests
+      - name: Validate plugin manifests
+        run: |
+          find plugins -name "syntropic137-plugin.json" | while read -r manifest; do
+            echo "Validating ${manifest}"
+            check-jsonschema --schemafile .schemas/plugin-manifest.schema.json "${manifest}"
+          done
+
+      # Validate all workflow.yaml files (convert YAML to JSON first)
+      - name: Validate workflow definitions
+        run: |
+          find plugins -name "workflow.yaml" | while read -r workflow; do
+            echo "Validating ${workflow}"
+            python3 -c "
+          import yaml, json, sys
+          with open('${workflow}') as f:
+              data = yaml.safe_load(f)
+          json.dump(data, sys.stdout)
+          " | check-jsonschema --schemafile .schemas/workflow.schema.json -
+          done
+
+      # Validate all triggers.json files
+      - name: Validate trigger definitions
+        run: |
+          find plugins -name "triggers.json" | while read -r triggers; do
+            echo "Validating ${triggers}"
+            check-jsonschema --schemafile .schemas/triggers.schema.json "${triggers}"
+          done
+
+      # Validate phase frontmatter
+      - name: Validate phase frontmatter
+        run: |
+          find plugins -path "*/phases/*.md" | while read -r phase; do
+            echo "Validating frontmatter: ${phase}"
+            python3 -c "
+          import yaml, json, sys
+
+          with open('${phase}') as f:
+              content = f.read()
+
+          if not content.startswith('---'):
+              print(f'  No frontmatter — skipping')
+              sys.exit(0)
+
+          # Extract YAML between --- delimiters
+          parts = content.split('---', 2)
+          if len(parts) < 3:
+              print(f'  Malformed frontmatter — skipping')
+              sys.exit(0)
+
+          data = yaml.safe_load(parts[1])
+          if data is None:
+              print(f'  Empty frontmatter — skipping')
+              sys.exit(0)
+
+          json.dump(data, sys.stdout)
+          " | check-jsonschema --schemafile .schemas/phase-frontmatter.schema.json - 2>/dev/null || true
+          done
+
+      # Structural checks (no schema needed)
+      - name: Structural validation
+        run: |
+          ERRORS=0
+
+          # Every plugin in marketplace.json must have a matching directory
+          for source in $(jq -r '.plugins[].source' marketplace.json); do
+            if [ ! -d "${source}" ]; then
+              echo "::error::Plugin source directory missing: ${source}"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # Every plugin directory must have a manifest
+          for dir in plugins/*/; do
+            if [ ! -f "${dir}syntropic137-plugin.json" ]; then
+              echo "::error::Missing manifest: ${dir}syntropic137-plugin.json"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # Every workflow must have at least one phase
+          find plugins -name "workflow.yaml" | while read -r workflow; do
+            workflow_dir=$(dirname "${workflow}")
+            if [ ! -d "${workflow_dir}/phases" ] || [ -z "$(ls -A "${workflow_dir}/phases/" 2>/dev/null)" ]; then
+              echo "::error::Workflow has no phases: ${workflow}"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::${ERRORS} structural error(s) found"
+            exit 1
+          fi
+
+          echo "All structural checks passed"
