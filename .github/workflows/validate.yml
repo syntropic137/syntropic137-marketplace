@@ -18,6 +18,17 @@ jobs:
         id: schema
         run: |
           VERSION=$(jq -r '.syntropic137.min_platform_version' marketplace.json)
+
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error file=marketplace.json::Missing or null .syntropic137.min_platform_version"
+            exit 1
+          fi
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=marketplace.json::Invalid .syntropic137.min_platform_version '$VERSION' (expected semver format X.Y.Z)"
+            exit 1
+          fi
+
           echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Schema version: v${VERSION}"
 
@@ -61,12 +72,13 @@ jobs:
         run: |
           find plugins -name "workflow.yaml" | while read -r workflow; do
             echo "Validating ${workflow}"
-            python3 -c "
+            python3 - "${workflow}" <<'PY'
           import yaml, json, sys
-          with open('${workflow}') as f:
+          with open(sys.argv[1]) as f:
               data = yaml.safe_load(f)
           json.dump(data, sys.stdout)
-          " | check-jsonschema --schemafile .schemas/workflow.schema.json -
+          PY
+            | check-jsonschema --schemafile .schemas/workflow.schema.json -
           done
 
       # Validate all triggers.json files
@@ -82,29 +94,45 @@ jobs:
         run: |
           find plugins -path "*/phases/*.md" | while read -r phase; do
             echo "Validating frontmatter: ${phase}"
-            python3 -c "
+            frontmatter_json="$(mktemp)"
+            python3 - "${phase}" "${frontmatter_json}" <<'PY'
           import yaml, json, sys
 
-          with open('${phase}') as f:
+          with open(sys.argv[1]) as f:
               content = f.read()
 
           if not content.startswith('---'):
-              print(f'  No frontmatter — skipping')
-              sys.exit(0)
+              print('  No frontmatter — skipping')
+              sys.exit(10)
 
           # Extract YAML between --- delimiters
           parts = content.split('---', 2)
           if len(parts) < 3:
-              print(f'  Malformed frontmatter — skipping')
-              sys.exit(0)
+              print('  Malformed frontmatter')
+              sys.exit(1)
 
           data = yaml.safe_load(parts[1])
           if data is None:
-              print(f'  Empty frontmatter — skipping')
-              sys.exit(0)
+              print('  Empty frontmatter — skipping')
+              sys.exit(10)
 
-          json.dump(data, sys.stdout)
-          " | check-jsonschema --schemafile .schemas/phase-frontmatter.schema.json - 2>/dev/null || true
+          with open(sys.argv[2], 'w') as out:
+              json.dump(data, out)
+          PY
+            status=$?
+
+            if [ "${status}" -eq 10 ]; then
+              rm -f "${frontmatter_json}"
+              continue
+            fi
+
+            if [ "${status}" -ne 0 ]; then
+              rm -f "${frontmatter_json}"
+              exit "${status}"
+            fi
+
+            check-jsonschema --schemafile .schemas/phase-frontmatter.schema.json "${frontmatter_json}"
+            rm -f "${frontmatter_json}"
           done
 
       # Structural checks (no schema needed)
@@ -129,13 +157,13 @@ jobs:
           done
 
           # Every workflow must have at least one phase
-          find plugins -name "workflow.yaml" | while read -r workflow; do
+          while read -r workflow; do
             workflow_dir=$(dirname "${workflow}")
             if [ ! -d "${workflow_dir}/phases" ] || [ -z "$(ls -A "${workflow_dir}/phases/" 2>/dev/null)" ]; then
               echo "::error::Workflow has no phases: ${workflow}"
               ERRORS=$((ERRORS + 1))
             fi
-          done
+          done < <(find plugins -name "workflow.yaml")
 
           if [ "$ERRORS" -gt 0 ]; then
             echo "::error::${ERRORS} structural error(s) found"
