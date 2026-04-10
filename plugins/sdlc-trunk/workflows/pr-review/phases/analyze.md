@@ -1,66 +1,49 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read
+description: Deep code review across correctness, security, type safety, testing, and architecture
 ---
 
-You are performing a deep code review of PR #{{pr_number}} on {{repository}}.
+# Deep Analysis
 
-The previous phase gathered context about the PR, project stack, and coding standards. Use that context to guide your review.
+Perform a deep code review of PR `{{pr_number}}` on `{{repository}}`. The previous phase gathered project context and coding standards — use that output to guide this review.
 
-## Review Checklist
+## Variables
 
-For each changed file, evaluate against these categories:
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BASE_BRANCH: {{base_branch}}
+PR_CONTEXT: {{context}}
 
-### 1. Correctness
-- Does the logic produce the intended result?
-- Are edge cases handled (empty inputs, nulls, boundary values)?
-- Do error paths behave correctly?
-- Are there off-by-one errors, missing awaits, or unclosed resources?
+## Workflow
 
-### 2. Security
-- Input validation at system boundaries (user input, API params, file paths)
-- No secrets, tokens, or credentials in code
-- SQL/command injection prevention
-- Proper authentication and authorization checks
-- Safe file operations (no path traversal)
+1. **Review the PR context from the previous phase** — see `PR_CONTEXT` in Variables above.
 
-### 3. Type Safety
-- All function signatures fully typed (no implicit `any`, no untyped parameters)
-- Null/undefined handled explicitly (no `!` assertions without justification)
-- Return types match actual returns
-- Generic types used where appropriate (not `object` or `dict`)
+2. **Read the full diff:**
+   ```bash
+   git diff {{base_branch}}...HEAD
+   ```
 
-### 4. Testing
-- New behavior has corresponding tests
-- Tests cover both happy path and error cases
-- Tests are deterministic (no timing dependencies, no network calls)
-- Existing tests updated if behavior changed
+3. **For each changed file**, read the complete file for context (not just the diff lines).
 
-### 5. Architecture
-- Changes respect existing module boundaries
-- No circular dependencies introduced
-- New code follows established patterns in the codebase
-- Appropriate separation of concerns
+4. **Evaluate against these categories:**
 
-### 6. Performance (only for hot paths)
-- No N+1 queries or unbounded loops
-- Large data sets handled with pagination/streaming
-- Caching used appropriately (not prematurely)
+   - **Correctness:** Logic errors, edge cases (nulls, empty inputs, boundary values), off-by-one errors, missing awaits, unclosed resources.
+   - **Security:** Input validation at system boundaries, no secrets in code, injection prevention, proper auth checks, safe file ops (no path traversal).
+   - **Type Safety:** No implicit `any`, no untyped params, null/undefined handled explicitly (no `!` assertions without justification), return types match.
+   - **Testing:** New behavior has tests covering happy path and error cases; tests are deterministic; existing tests updated if behavior changed.
+   - **Architecture:** Module boundaries respected, no circular deps, new code follows established patterns, appropriate separation of concerns.
+   - **Performance** (hot paths only): No N+1 queries, large data sets paginated/streamed, caching appropriate.
 
-## Process
+5. Cross-reference findings against the project coding standards from the context phase.
 
-1. Read the full diff: `git diff {{base_branch}}...HEAD`
-2. For each changed file, read the full file for context (not just the diff)
-3. Cross-reference with project coding standards from the context phase
-4. Record findings with exact file paths and line numbers
+## Report
 
-## Output
-
-Produce a JSON findings document:
+Write a JSON findings document to `artifacts/output/findings.md`:
 
 ```json
 {
-  "summary": "One paragraph assessment",
+  "summary": "One-paragraph assessment",
   "risk_level": "low|medium|high",
   "verdict": "approve|request_changes|comment",
   "findings": [
@@ -75,6 +58,6 @@ Produce a JSON findings document:
     }
   ],
   "testing_assessment": "Are new changes adequately tested?",
-  "files_reviewed": ["list of files"]
+  "files_reviewed": ["list", "of", "files"]
 }
 ```

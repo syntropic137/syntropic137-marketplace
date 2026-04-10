@@ -1,57 +1,67 @@
 ---
 model: haiku
 allowed-tools: bash, git
+description: Update the GitHub release with generated notes, or block if audit found blockers
 ---
 
-You are finalizing release {{tag}} of {{repository}}.
+# Finalize Release
 
-## Objective
+Update GitHub release `{{tag}}` on `{{repository}}` with the generated notes from the previous phase. If the audit phase found blockers, do NOT publish — flag them instead.
 
-Update the GitHub release with the generated notes. If there are blockers from the audit, flag them instead of publishing.
+## Variables
 
-## Steps
+TAG: {{tag}}
+REPOSITORY: {{repository}}
+RELEASE_AUDIT: {{audit}}
+RELEASE_NOTES: {{notes}}
+
+## Workflow
+
+1. **Review the audit and release notes from previous phases** — see `RELEASE_AUDIT` and `RELEASE_NOTES` in Variables above. Check `blockers` in the audit JSON. If blockers exist, skip to "If Blockers Found" below.
 
 ### If No Blockers
 
-1. **Update the release with generated notes:**
+2. **Update the release with generated notes:**
    ```bash
    gh release edit {{tag}} --repo {{repository}} --notes "<release notes from previous phase>"
    ```
 
-2. **Verify the release:**
+3. **Verify the release:**
    ```bash
    gh release view {{tag}} --repo {{repository}} --json name,tagName,isDraft,isPrerelease,body
-   ```
-
-3. **Post a summary comment** on the most recent merged PR (if detectable):
-   ```bash
-   echo "Release {{tag}} published with updated release notes."
    ```
 
 ### If Blockers Found
 
 Do NOT publish. Instead:
 
-1. **Comment on the release** with the blockers:
+2. **Update the release with blocker details:**
    ```bash
-   gh release edit {{tag}} --repo {{repository}} --notes "$(cat <<NOTES
-   ## Release Blocked
+   gh release edit {{tag}} --repo {{repository}} --notes "## Release Blocked
 
    The following issues must be resolved before this release ships:
 
    [list blockers from audit phase]
 
    ---
-   *This release was audited automatically by Syntropic.*
-   NOTES
-   )"
+   *Audited automatically by Syntropic137.*"
    ```
 
-2. **Mark as draft** if not already:
+3. **Mark as draft:**
    ```bash
    gh release edit {{tag}} --repo {{repository}} --draft
    ```
 
-## Output
+## Report
 
-Report the final release status: published, blocked, or draft.
+Write a release summary to `artifacts/output/release-summary.md`:
+
+```markdown
+## Release Summary
+
+**Tag:** {{tag}}
+**Repository:** {{repository}}
+**Outcome:** published | blocked | draft
+**Release URL:** [URL if published]
+**Blockers:** [list if blocked, or "none"]
+```

@@ -31,6 +31,9 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/diagnose.md
+    input_artifacts: []
+    output_artifacts:
+      - diagnosis
     allowed_tools:
       - bash
       - git
@@ -41,6 +44,10 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/fix.md
+    input_artifacts:
+      - diagnose
+    output_artifacts:
+      - fix-summary
     allowed_tools:
       - bash
       - git
@@ -52,6 +59,10 @@ phases:
     order: 3
     execution_type: sequential
     prompt_file: phases/verify.md
+    input_artifacts:
+      - fix
+    output_artifacts:
+      - verification
     allowed_tools:
       - bash
       - git

@@ -14,6 +14,7 @@
       "input_mapping": {
         "pr_number": "pull_request.number",
         "branch": "pull_request.head.ref",
+        "base_branch": "pull_request.base.ref",
         "repository": "repository.full_name",
         "title": "pull_request.title"
       }

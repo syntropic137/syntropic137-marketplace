@@ -1,47 +1,41 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read
+description: Analyze all PR changes and produce a structured findings JSON
 ---
 
-You are performing a thorough code review of PR #{{pr_number}} on {{repository}}.
+# Analyze Changes
 
-## Objective
+Analyze every change in PR `{{pr_number}}` on `{{repository}}`. Follow the `Workflow` to produce a structured findings JSON for the `Report` phase.
 
-Analyze all changes in this pull request to identify issues before they reach production. Focus on correctness, security, and maintainability.
+## Variables
 
-## Process
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BASE_BRANCH: {{base_branch}}
+TITLE: {{title}}
 
-1. **Understand the scope** — Run `git log --oneline main..HEAD` to see all commits. Read the PR title and commit messages to understand intent.
+## Workflow
 
-2. **Review the diff** — Run `git diff main...HEAD` to see all changes. For large diffs, review file-by-file.
+1. **Understand scope** — Run `git log --oneline {{base_branch}}..HEAD`. Read commit messages to understand intent.
 
-3. **Read full context** — For each modified file, read the surrounding code (not just the diff) to understand how changes fit into the existing architecture.
+2. **Review the diff** — Run `git diff {{base_branch}}...HEAD`. For large diffs, work file-by-file.
 
-4. **Check for issues** in these categories:
+3. **Read full context** — For each modified file, read the surrounding code (not just the diff lines) to understand how changes fit the existing architecture.
 
-### Critical (must fix before merge)
-- Logic errors, incorrect behavior, broken edge cases
-- Security vulnerabilities (injection, auth bypass, secrets in code)
-- Data loss risks (missing transactions, unsafe deletes)
-- Breaking API changes without migration
+4. **Evaluate against these categories:**
 
-### Warnings (should fix)
-- Missing error handling for likely failure modes
-- Type safety gaps (untyped parameters, unsafe casts, `any` usage)
-- Race conditions or concurrency issues
-- Missing or incorrect tests for new behavior
+   - **Critical (must fix before merge):** Logic errors, security vulnerabilities (injection, auth bypass, secrets in code), data loss risks, breaking API changes without migration.
+   - **Warnings (should fix):** Missing error handling for likely failures, type safety gaps, race conditions, missing tests for new behavior.
+   - **Suggestions (nice to have):** Naming clarity, duplication, performance on hot paths, documentation gaps.
 
-### Suggestions (nice to have)
-- Naming improvements for clarity
-- Opportunities to reduce duplication
-- Performance improvements for hot paths
-- Documentation gaps for complex logic
+## Report
 
-5. **Produce structured output** — Create a JSON document with your findings:
+Write findings to `artifacts/output/findings.md`:
 
 ```json
 {
-  "summary": "One-paragraph summary of the PR and overall assessment",
+  "summary": "One-paragraph assessment of the PR",
   "risk_level": "low|medium|high",
   "findings": [
     {
@@ -50,13 +44,11 @@ Analyze all changes in this pull request to identify issues before they reach pr
       "file": "path/to/file.py",
       "line": 42,
       "title": "Short description",
-      "detail": "Explanation of the issue and why it matters",
-      "suggestion": "How to fix it"
+      "detail": "Why this matters",
+      "suggestion": "How to fix"
     }
   ],
   "files_reviewed": ["list", "of", "files"],
-  "test_coverage": "Assessment of whether new code has adequate test coverage"
+  "test_coverage": "Assessment of test coverage for new code"
 }
 ```
-
-Write the findings JSON to stdout so the next phase can consume it.

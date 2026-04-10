@@ -1,40 +1,59 @@
 ---
 model: haiku
 allowed-tools: bash, git
+description: Verify the fix was committed and pushed, then post a status comment
 ---
 
-You are verifying a CI fix for PR #{{pr_number}} in {{repository}}.
+# Verify Fix
 
-## Objective
+Confirm the CI fix was correctly applied and pushed for PR `{{pr_number}}` in `{{repository}}`. This is a lightweight verification pass.
 
-Confirm the fix was applied and pushed correctly. This is a lightweight verification pass.
+## Variables
 
-## Steps
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BRANCH: {{branch}}
+FIX_SUMMARY: {{fix}}
 
-1. **Check the commit was pushed:**
+## Workflow
+
+1. **Review the fix summary from the previous phase** — see `FIX_SUMMARY` in Variables above.
+
+2. **Confirm the commit landed:**
    ```bash
    git log --oneline -3
    ```
 
-2. **Verify the fix is on the right branch:**
+3. **Confirm the correct branch:**
    ```bash
    git branch --show-current
    ```
    Should be `{{branch}}`.
 
-3. **Check CI status** (may still be running):
+4. **Check CI status** (may still be queued):
    ```bash
-   gh pr checks {{pr_number}} --json name,state,conclusion
+   gh pr checks {{pr_number}} --repo {{repository}} --json name,state,conclusion
    ```
 
-4. **Post a status comment:**
+5. **Post a status comment:**
    ```bash
-   gh pr comment {{pr_number}} --body "**CI Self-Healing:** Applied fix in commit $(git rev-parse --short HEAD).
+   gh pr comment {{pr_number}} --repo {{repository}} --body "**CI Self-Healing:** Applied fix in $(git rev-parse --short HEAD).
 
-   **What was fixed:** [brief description from diagnosis]
-   **Status:** Waiting for CI to re-run"
+   **What was fixed:** [brief description from diagnosis phase]
+   **CI status:** [passing / still running / still failing]"
    ```
 
-## Output
+## Report
 
-Report whether the fix was successfully applied and pushed. If CI has already completed, report pass/fail.
+Write a verification report to `artifacts/output/verification.md`:
+
+```markdown
+## Verification
+
+**PR:** #{{pr_number}} on {{repository}}
+**Branch:** {{branch}}
+**Commit SHA:** [SHA]
+**Fix confirmed:** yes | no
+**CI status:** passing | running | failing
+**Comment posted:** yes | no
+```

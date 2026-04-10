@@ -1,49 +1,57 @@
 ---
 model: haiku
 allowed-tools: bash, git, read
+description: Gather PR metadata, project stack, and coding standards for the deep review
 ---
 
-You are preparing context for a code review of PR #{{pr_number}} on {{repository}}.
+# Gather Context
 
-## Objective
+Quickly collect all context needed for the deep analysis phase. This is a fast, lightweight pass — don't read full file contents.
 
-Quickly gather all relevant context so the deep analysis phase can focus on finding issues rather than reading files. This is a fast, lightweight pass.
+## Variables
 
-## Steps
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BRANCH: {{branch}}
+BASE_BRANCH: {{base_branch}}
+TITLE: {{title}}
+AUTHOR: {{author}}
 
-1. **PR metadata** — Run:
+## Workflow
+
+1. **PR metadata:**
    ```bash
-   gh pr view {{pr_number}} --json title,body,labels,milestone,additions,deletions,changedFiles
+   gh pr view {{pr_number}} --repo {{repository}} --json title,body,labels,milestone,additions,deletions,changedFiles
    ```
 
-2. **Commit history** — Understand the progression of changes:
+2. **Commit history:**
    ```bash
    git log --oneline {{base_branch}}..HEAD
    ```
 
-3. **Changed files summary** — Get the list and diff stats:
+3. **Diff stats:**
    ```bash
    git diff --stat {{base_branch}}...HEAD
    ```
 
-4. **Project conventions** — Check for:
-   - `CLAUDE.md` or `AGENTS.md` at the repo root (coding standards)
+4. **Project conventions** — check for (read, don't skip):
+   - `CLAUDE.md` or `AGENTS.md` at repo root (coding standards)
    - `pyproject.toml` or `package.json` (language/framework)
    - Linter configs (`.eslintrc`, `ruff.toml`, `pyright` settings)
-   - Test patterns (where tests live, naming conventions)
+   - Test location and naming conventions
 
-## Output
+## Report
 
-Produce a structured context summary:
+Write a structured context summary to `artifacts/output/pr-context.md`:
 
-```
+```markdown
 ## PR Context
 
 **Title:** {{title}}
 **Author:** {{author}}
 **Branch:** {{branch}} → {{base_branch}}
-**Changed files:** [count]
-**Additions/Deletions:** +[n] / -[n]
+**Changed files:** N
+**Additions/Deletions:** +N / -N
 
 ### Commits
 [commit list]
@@ -55,10 +63,8 @@ Produce a structured context summary:
 - Test framework: [detected]
 
 ### Coding Standards
-[key rules from CLAUDE.md/AGENTS.md if present]
+[key rules from CLAUDE.md/AGENTS.md, or "none found"]
 
 ### Changed Files
 [grouped by directory/module]
 ```
-
-Keep this fast — don't read full file contents, just gather metadata.
