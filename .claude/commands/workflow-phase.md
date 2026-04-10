@@ -17,7 +17,7 @@ DESCRIPTION: $3
 
 ## Workflow
 
-1. **Load the standard** — WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command format.
+1. **Load the current phase standard** — read `CLAUDE.md` in this repo (the live source of truth for the phase format). Then WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command spec.
 
 2. **Read the workflow inputs** — Read `WORKFLOW_PATH/workflow.yaml` to extract the `inputs` list. These become the Variables section in the new phase.
 

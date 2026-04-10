@@ -15,10 +15,15 @@ syn workflow install <plugin-name>
 Workflow phase files (`phases/*.md`) follow the **Claude command standard** exactly. A workflow is a multi-phase command — each phase is one command invocation. When authoring or reviewing phase files, treat them as Claude custom slash commands.
 
 Key docs to fetch on demand:
-- https://code.claude.com/docs/en/commands.md
-- https://code.claude.com/docs/en/skills.md
 
-**Rule: When building or improving workflow phase files, always WebFetch the Claude command docs above for latest best practices.**
+- Commands: https://code.claude.com/docs/en/commands.md
+- Skills: https://code.claude.com/docs/en/skills.md
+- Hooks: https://code.claude.com/docs/en/hooks.md
+- Settings and tools: https://code.claude.com/docs/en/settings.md
+
+**Rule: WebFetch the relevant doc above before authoring any phase file, command, or skill.**
+
+The canonical workflow authoring standard (kept in sync with this file) lives in the Syntropic platform repo at `packages/syn-domain/CLAUDE.md`.
 
 ## 3. Phase File Standard Format
 
@@ -100,13 +105,13 @@ State does **not** survive between phases except via:
 
 You cannot edit in phase 2 and push in phase 3. Push must happen in the same phase as the edit.
 
-## 5. `--repo` Flag Rule
+## 6. `--repo` Flag Rule
 
 All `gh` CLI subcommands (`pr`, `issue`, `release`, `checks`, etc.) MUST include `--repo {{repository}}`. The workspace git remote is not reliable.
 
 `gh api` calls with `repos/` in the path are fine as-is.
 
-## 6. Plugin Structure
+## 7. Plugin Structure
 
 ```
 plugins/
@@ -142,14 +147,14 @@ plugins/
 | `inputs` | List of `{name, description, required, default}` |
 | `phases` | Ordered list with `id`, `name`, `order`, `execution_type`, `prompt_file`, `input_artifacts`, `output_artifacts`, `allowed_tools` |
 
-## 7. Existing Plugins
+## 8. Existing Plugins
 
 | Plugin | Workflows |
 |---|---|
 | `code-review` | `review` — analyze PR diff, post structured review |
 | `sdlc-trunk` | `pr-review`, `ci-fix`, `release-prep` — full trunk-based dev lifecycle |
 
-## 8. Quality Checklist
+## 9. Quality Checklist
 
 Before submitting or merging a new plugin:
 
