@@ -183,49 +183,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test version bump script
+        run: pytest .github/scripts/test_check_version_bumps.py -v
+        working-directory: ${{ github.workspace }}
+
       - name: Check plugin version bumps
-        run: |
-          BASE_REF="${{ github.base_ref }}"
-          ERRORS=0
-
-          # Find all plugins that have changed files in this PR
-          CHANGED_PLUGINS=$(git diff --name-only "origin/${BASE_REF}...HEAD" \
-            | grep '^plugins/' \
-            | cut -d/ -f2 \
-            | sort -u)
-
-          if [ -z "$CHANGED_PLUGINS" ]; then
-            echo "No plugin files changed — skipping version check"
-            exit 0
-          fi
-
-          for plugin in $CHANGED_PLUGINS; do
-            manifest="plugins/${plugin}/syntropic137-plugin.json"
-
-            if [ ! -f "$manifest" ]; then
-              echo "  ${plugin}: no manifest found, skipping"
-              continue
-            fi
-
-            CURRENT=$(jq -r '.version' "$manifest")
-
-            # Get version on the base branch (default 0.0.0 for new plugins)
-            BASE=$(git show "origin/${BASE_REF}:${manifest}" 2>/dev/null \
-              | jq -r '.version' 2>/dev/null \
-              || echo "0.0.0")
-
-            if [ "$CURRENT" = "$BASE" ]; then
-              echo "::error file=${manifest}::Plugin '${plugin}' has changed but version is still ${CURRENT} — bump the version in ${manifest}"
-              ERRORS=$((ERRORS + 1))
-            else
-              echo "  ${plugin}: ${BASE} → ${CURRENT} ✓"
-            fi
-          done
-
-          if [ "$ERRORS" -gt 0 ]; then
-            echo ""
-            echo "::error::${ERRORS} plugin(s) need a version bump before merge"
-            exit 1
-          fi
-
-          echo "All changed plugins have version bumps"
+        run: python .github/scripts/check_version_bumps.py --base "origin/${{ github.base_ref }}"
