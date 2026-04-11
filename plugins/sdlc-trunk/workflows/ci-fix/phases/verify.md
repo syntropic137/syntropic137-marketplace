@@ -39,7 +39,7 @@ FIX_SUMMARY: {{fix}}
    ```bash
    gh pr comment {{pr_number}} --repo {{repository}} --body "**CI Self-Healing:** Applied fix in $(git rev-parse --short HEAD).
 
-   **What was fixed:** [brief description from diagnosis phase]
+   **What was fixed:** ${FIX_SUMMARY}
    **CI status:** [passing / still running / still failing]"
    ```
 

@@ -20,8 +20,11 @@ RELEASE_AUDIT: {{audit}}
 
 2. **Get the commit range** — use `previous_tag` from the audit, or detect:
    ```bash
-   PREV_TAG=$(git tag --sort=-creatordate | sed -n '2p')
-   git log --oneline ${PREV_TAG}..{{tag}}
+   PREV_TAG=$(printf '%s' "$RELEASE_AUDIT" | tr -d '\n' | sed -n 's/.*"previous_tag"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+   if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "null" ]; then
+     PREV_TAG=$(git tag --sort=-creatordate | sed -n '2p')
+   fi
+   git log --oneline "${PREV_TAG}..{{tag}}"
    ```
 
 3. **Categorize commits** by conventional commit prefix:

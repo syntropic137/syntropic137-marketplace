@@ -23,7 +23,11 @@ RELEASE_NOTES: {{notes}}
 
 2. **Update the release with generated notes:**
    ```bash
-   gh release edit {{tag}} --repo {{repository}} --notes "<release notes from previous phase>"
+   RELEASE_NOTES_FILE="$(mktemp)"
+   cat > "$RELEASE_NOTES_FILE" <<'EOF'
+   {{notes}}
+   EOF
+   gh release edit {{tag}} --repo {{repository}} --notes-file "$RELEASE_NOTES_FILE"
    ```
 
 3. **Verify the release:**

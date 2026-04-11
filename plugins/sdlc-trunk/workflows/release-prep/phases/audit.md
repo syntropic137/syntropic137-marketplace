@@ -32,12 +32,15 @@ PREVIOUS_TAG: {{previous_tag}}
 
 5. **Known vulnerabilities:**
    ```bash
-   gh api repos/{{repository}}/vulnerability-alerts --jq '.[] | .security_advisory.summary' 2>/dev/null || echo "No Dependabot data"
+   gh api repos/{{repository}}/dependabot/alerts --paginate --jq '.[].security_advisory.summary' 2>/dev/null || echo "No Dependabot data"
    ```
 
 6. **Breaking changes** — scan commits between previous tag and `{{tag}}`:
    ```bash
-   PREV=$(git tag --sort=-creatordate | sed -n '2p')
+   PREV="{{previous_tag}}"
+   if [ -z "$PREV" ]; then
+     PREV=$(git tag --sort=-creatordate | sed -n '2p')
+   fi
    git log --oneline ${PREV}..{{tag}}
    ```
    Look for `BREAKING CHANGE`, `!:` in commit messages, or major version bumps.
