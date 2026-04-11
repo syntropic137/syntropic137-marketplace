@@ -1,2 +1,8 @@
 # Fetched schemas (CI-only, not committed)
 .schemas/
+
+# Python
+__pycache__/
+*.pyc
+.python-version
+.pytest_cache/
