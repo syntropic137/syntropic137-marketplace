@@ -1,43 +1,50 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read
+description: Diagnose the root cause of a CI failure — do not fix, only diagnose
 ---
 
-You are diagnosing a CI failure on PR #{{pr_number}} in {{repository}}.
+# Diagnose Failure
 
-## Objective
+Identify the root cause of the CI failure on PR `{{pr_number}}` in `{{repository}}`. Follow the `Workflow` to produce a diagnosis JSON for the fix phase. Do NOT attempt fixes here.
 
-Identify the root cause of the CI failure so it can be fixed automatically. Do NOT attempt to fix anything yet — only diagnose.
+## Variables
 
-## Steps
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BRANCH: {{branch}}
+CHECK_RUN_NAME: {{check_run_name}}
+CHECK_RUN_ID: {{check_run_id}}
 
-1. **Fetch CI logs** — Get the failure output:
+## Workflow
+
+1. **Fetch CI logs:**
    ```bash
-   gh pr checks {{pr_number}} --json name,state,conclusion,detailsUrl
+   gh pr checks {{pr_number}} --repo {{repository}} --json name,state,conclusion,detailsUrl
    ```
-   If `check_run_id` is available, get detailed logs:
+   If `CHECK_RUN_ID` is set, get detailed output:
    ```bash
    gh api repos/{{repository}}/check-runs/{{check_run_id}} --jq '.output.text // .output.summary // "No output"'
    ```
 
-2. **Identify the failure type**:
-   - **Lint/format failure** — code style violations (easiest to fix)
-   - **Type check failure** — pyright, tsc, mypy errors
-   - **Test failure** — unit/integration test assertions
-   - **Build failure** — compilation, dependency resolution
-   - **Other** — permissions, infrastructure, flaky tests
+2. **Classify the failure type:**
+   - `lint` — code style violations (easiest to auto-fix)
+   - `typecheck` — pyright, tsc, mypy errors
+   - `test` — failing assertions
+   - `build` — compilation or dependency errors
+   - `other` — permissions, infra, flaky tests
 
-3. **Read the failing code** — Look at the files and lines mentioned in the error output. Read full file context.
+3. **Read the failing code** — look at files and lines from the error output; read full file context.
 
-4. **Check recent changes** — Compare against the base branch:
+4. **Check if introduced by this PR:**
    ```bash
-   git diff {{base_branch}}...HEAD -- <failing-file>
+   git diff main...HEAD -- <failing-file>
    ```
-   Determine if the failure was introduced by this PR or is pre-existing.
+   Determine if the failure pre-existed or was introduced by this PR's changes.
 
-## Output
+## Report
 
-Produce a diagnosis report:
+Write a diagnosis JSON to `artifacts/output/diagnosis.md`:
 
 ```json
 {
@@ -52,8 +59,4 @@ Produce a diagnosis report:
 }
 ```
 
-Set `should_auto_fix: false` if:
-- The failure is pre-existing (not introduced by this PR)
-- The fix requires architectural changes
-- The failure is a flaky test (intermittent)
-- You're not confident in the diagnosis
+Set `should_auto_fix: false` if: the failure is pre-existing, the fix requires architectural changes, it's a flaky test, or confidence is low.

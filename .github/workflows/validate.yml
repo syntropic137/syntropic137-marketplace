@@ -173,3 +173,25 @@ jobs:
           fi
 
           echo "All structural checks passed"
+
+  version-bump:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Test version bump script
+        run: pytest .github/scripts/test_check_version_bumps.py -v
+
+      - name: Check plugin version bumps
+        run: python .github/scripts/check_version_bumps.py --base "origin/${{ github.base_ref }}"

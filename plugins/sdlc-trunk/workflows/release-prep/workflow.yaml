@@ -32,6 +32,9 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/audit.md
+    input_artifacts: []
+    output_artifacts:
+      - release-audit
     allowed_tools:
       - bash
       - git
@@ -42,6 +45,10 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/notes.md
+    input_artifacts:
+      - audit
+    output_artifacts:
+      - release-notes
     allowed_tools:
       - bash
       - git
@@ -51,6 +58,11 @@ phases:
     order: 3
     execution_type: sequential
     prompt_file: phases/publish.md
+    input_artifacts:
+      - audit
+      - notes
+    output_artifacts:
+      - release-summary
     allowed_tools:
       - bash
       - git

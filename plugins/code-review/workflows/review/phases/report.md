@@ -1,66 +1,86 @@
 ---
 model: sonnet
 allowed-tools: bash, git
+description: Transform analysis findings into a posted GitHub PR review
 ---
 
-You are writing a code review report for PR #{{pr_number}} on {{repository}}.
+# Write Review
 
-## Objective
+Transform the findings from the previous phase into a constructive GitHub PR review for PR `{{pr_number}}` on `{{repository}}`. Follow the `Workflow` and post via the `Report` step.
 
-Transform the analysis findings into actionable GitHub PR review comments. The goal is a helpful, constructive review that the author can act on immediately.
+## Variables
 
-## Input
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+TITLE: {{title}}
+FINDINGS: {{analyze}}
 
-The previous phase produced a structured analysis with findings categorized by severity and type. Use that analysis to write the review.
+## Workflow
 
-## Output Format
+1. Review the findings from the previous phase — see `FINDINGS` in Variables above.
 
-Write a GitHub-compatible review comment in Markdown. Structure it as:
+2. Compose a review using this structure:
 
-### Review Header
+   ```
+   ## Code Review: {{title}}
 
-```markdown
-## Code Review: {{title}}
+   **Risk Level:** low/medium/high | **Files Reviewed:** N | **Findings:** N
 
-**Risk Level:** [low/medium/high] | **Files Reviewed:** [count] | **Findings:** [count]
+   ### Summary
+   [What does this PR do, and what's the overall verdict?]
 
-### Summary
-[One paragraph: what does this PR do, and what's the overall verdict?]
+   ---
+
+   #### [!] Critical title
+   `path/to/file.py:42` | **Category:** bug/security/etc.
+
+   [Explanation — what's wrong and why it matters]
+
+   **Fix:** [Specific suggestion with code snippet if helpful]
+
+   ---
+
+   #### [?] Warning title
+   `path/to/file.py:88`
+
+   [Explanation] **Fix:** [Suggestion]
+
+   ---
+
+   #### [~] Suggestion title
+   `path/to/file.py:120`
+
+   [Explanation]
+
+   ---
+
+   ### Verdict
+   [approve / request changes / comment only]
+   [Questions for the author about intent or trade-offs]
+   [Acknowledge what was done well — a short "LGTM" is fine for clean code]
+   ```
+
+3. Guidelines: reference exact file paths and line numbers; explain *why*, not just *what*; don't block over style nits; if the PR is clean, say so clearly.
+
+## Report
+
+Post the review to GitHub:
+
+```bash
+gh pr review {{pr_number}} --repo {{repository}} --body "<review content>" --event COMMENT
+# Use --event REQUEST_CHANGES if verdict is request_changes
+# Use --event APPROVE if clean and approving
 ```
 
-### Findings (grouped by severity)
-
-For each finding, format as:
+Write a summary to `artifacts/output/review.md`:
 
 ```markdown
-#### [severity emoji] [title]
-**File:** `path/to/file.py:42`
-**Category:** [bug/security/type-safety/etc.]
+## Review Posted
 
-[Explanation of the issue]
+**PR:** #{{pr_number}} on {{repository}}
+**Verdict:** approve | request_changes | comment
+**Risk level:** low | medium | high
+**Findings:** N critical, N warnings, N suggestions
 
-**Suggestion:**
-[How to fix, with code snippet if helpful]
+[Link to the posted review if available]
 ```
-
-Use these severity indicators:
-- Critical: `[!]` prefix
-- Warning: `[?]` prefix
-- Suggestion: `[~]` prefix
-
-### Closing
-
-End with:
-- Whether the PR is ready to merge as-is, needs changes, or needs discussion
-- Any questions for the author about intent or trade-offs
-- Acknowledgment of what was done well (if applicable)
-
-## Guidelines
-
-- Be specific — reference exact file paths and line numbers
-- Be constructive — explain *why* something is an issue, not just *that* it is
-- Be proportional — don't block a PR over style preferences
-- Respect the author's intent — suggest improvements, don't rewrite their approach
-- If the PR is clean, say so — a short "LGTM" review is fine for good code
-
-Post the review using `gh pr review {{pr_number}} --body "<review>"` or output the Markdown for manual posting.

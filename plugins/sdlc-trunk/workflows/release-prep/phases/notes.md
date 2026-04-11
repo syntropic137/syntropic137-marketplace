@@ -1,43 +1,56 @@
 ---
 model: sonnet
 allowed-tools: bash, git
+description: Generate categorized release notes from commit history since the last tag
 ---
 
-You are generating release notes for {{tag}} of {{repository}}.
+# Generate Release Notes
 
-## Objective
+Generate comprehensive release notes for `{{tag}}` of `{{repository}}` from the commit history since the previous release.
 
-Create comprehensive, well-organized release notes from the commit history since the last release.
+## Variables
 
-## Process
+TAG: {{tag}}
+REPOSITORY: {{repository}}
+RELEASE_AUDIT: {{audit}}
 
-1. **Get the commit range:**
+## Workflow
+
+1. **Review the release audit from the previous phase** — see `RELEASE_AUDIT` in Variables above. Use `previous_tag` from the audit JSON.
+
+2. **Get the commit range** — use `previous_tag` from the audit, or detect:
    ```bash
-   # Use previous_tag from audit or detect it
-   PREV_TAG=$(git tag --sort=-creatordate | sed -n '2p')
-   git log --oneline ${PREV_TAG}..{{tag}}
+   PREV_TAG=$(printf '%s' "$RELEASE_AUDIT" | tr -d '\n' | sed -n 's/.*"previous_tag"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+   if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "null" ]; then
+     PREV_TAG=$(git tag --sort=-creatordate | sed -n '2p')
+   fi
+   git log --oneline "${PREV_TAG}..{{tag}}"
    ```
 
-2. **Categorize commits** using conventional commit prefixes:
+3. **Categorize commits** by conventional commit prefix:
 
-   | Prefix | Category | Emoji |
-   |--------|----------|-------|
-   | `feat` | New Features | |
-   | `fix` | Bug Fixes | |
-   | `perf` | Performance | |
-   | `docs` | Documentation | |
-   | `refactor` | Refactoring | |
-   | `test` | Testing | |
-   | `chore` | Maintenance | |
-   | `BREAKING` | Breaking Changes | |
+   | Prefix | Category |
+   |--------|----------|
+   | `feat` | New Features |
+   | `fix` | Bug Fixes |
+   | `perf` | Performance |
+   | `docs` | Documentation |
+   | `refactor` | Refactoring |
+   | `test` | Testing |
+   | `chore` | Maintenance |
+   | `BREAKING` | Breaking Changes |
 
-3. **Generate the notes** in this format:
+4. **Draft the notes** (see Report format below). Include PR numbers as links where available. For breaking changes, add migration instructions.
+
+## Report
+
+Write release notes to `artifacts/output/release-notes.md`:
 
 ```markdown
 ## What's New
 
 ### Breaking Changes
-- [list any breaking changes with migration instructions]
+- [description with migration instructions]
 
 ### New Features
 - **scope:** description (#PR)
@@ -58,11 +71,4 @@ Create comprehensive, well-organized release notes from the commit history since
 https://github.com/{{repository}}/compare/${PREV_TAG}...{{tag}}
 ```
 
-## Guidelines
-
-- Lead with the most impactful changes
-- Include PR numbers as links where available
-- For breaking changes, include migration instructions
-- Mention contributors by GitHub username
-- Keep descriptions concise — one line per item
-- Group related changes under the same bullet
+Guidelines: lead with most impactful changes; one line per item; group related changes; keep descriptions concise.
