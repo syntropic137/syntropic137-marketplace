@@ -4,16 +4,11 @@ description: "Comprehensive pull request review — architecture, security, test
 type: review
 classification: standard
 
-repository:
-  url: "https://github.com/{{repository}}"
-  ref: "{{branch}}"
+requires_repos: true
 
 inputs:
   - name: pr_number
     description: "Pull request number"
-    required: true
-  - name: repository
-    description: "Repository in owner/repo format"
     required: true
   - name: branch
     description: "Head branch of the pull request"
