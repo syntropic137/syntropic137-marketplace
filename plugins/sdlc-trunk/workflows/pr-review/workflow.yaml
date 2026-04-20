@@ -30,6 +30,9 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/context.md
+    input_artifacts: []
+    output_artifacts:
+      - pr-context
     allowed_tools:
       - bash
       - git
@@ -40,6 +43,10 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/analyze.md
+    input_artifacts:
+      - context
+    output_artifacts:
+      - findings
     allowed_tools:
       - bash
       - git
@@ -50,6 +57,10 @@ phases:
     order: 3
     execution_type: sequential
     prompt_file: phases/report.md
+    input_artifacts:
+      - analyze
+    output_artifacts:
+      - review
     allowed_tools:
       - bash
       - git

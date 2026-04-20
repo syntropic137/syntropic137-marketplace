@@ -1,81 +1,90 @@
 ---
 model: sonnet
 allowed-tools: bash, git
+description: Post a structured GitHub PR review from the analysis findings
 ---
 
-You are posting a code review for PR #{{pr_number}} on {{repository}}.
+# Post Review
 
-## Objective
+Transform the deep analysis findings into a GitHub PR review for PR `{{pr_number}}` on `{{repository}}`. Follow the `Workflow` and post via the `Report` step.
 
-Transform the analysis findings into a GitHub PR review. The review should be constructive, specific, and actionable.
+## Variables
 
-## Format
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+FINDINGS: {{analyze}}
 
-Compose a review using this structure:
+## Workflow
 
-```markdown
-## Code Review
+1. Review the findings from the previous phase — see `FINDINGS` in Variables above.
 
-**Risk:** [low/medium/high] | **Files:** [count] | **Findings:** [count]
+2. Compose a review using this structure:
 
-### Summary
-[What does this PR do? Is it ready to merge?]
+   ```
+   ## Code Review
 
----
+   **Risk:** low/medium/high | **Files:** N | **Findings:** N
 
-### Findings
+   ### Summary
+   [What does this PR do? Is it ready to merge?]
 
-#### [!] [Critical finding title]
-`path/to/file.py:42`
+   ---
 
-[Explanation — what's wrong and why it matters]
+   ### Findings
 
-**Fix:** [Specific suggestion with code if helpful]
+   #### [!] Critical title
+   `path/to/file.py:42`
 
----
+   [What's wrong and why it matters]
 
-#### [?] [Warning title]
-`path/to/file.py:88`
+   **Fix:** [Specific suggestion with code if helpful]
 
-[Explanation]
+   ---
 
-**Fix:** [Suggestion]
+   #### [?] Warning title
+   `path/to/file.py:88`
 
----
+   [Explanation] **Fix:** [Suggestion]
 
-#### [~] [Suggestion title]
-`path/to/file.py:120`
+   ---
 
-[Explanation]
+   #### [~] Suggestion title
+   `path/to/file.py:120`
 
----
+   [Explanation]
 
-### Verdict
+   ---
 
-[approve / request changes / comment only]
-[Any questions for the author]
-[What was done well — acknowledge good work]
-```
+   ### Verdict
 
-## Severity Indicators
+   [approve / request changes / comment only]
+   [Questions for the author]
+   [What was done well — acknowledge good work]
+   ```
 
-- `[!]` Critical — must fix before merge
-- `[?]` Warning — should fix, not a blocker
-- `[~]` Suggestion — nice to have
+3. Severity indicators: `[!]` critical (must fix), `[?]` warning (should fix), `[~]` suggestion (nice to have).
 
-## Guidelines
+4. Guidelines: exact file paths and line numbers; explain *why*; don't block over style nits; if clean, a short "LGTM" is appropriate.
 
-- Be specific: exact file paths and line numbers
-- Be constructive: explain *why*, not just *what*
-- Be proportional: don't block over style nits
-- Be concise: developers read reviews quickly
-- If clean: a short "LGTM" is fine — don't invent issues
+## Report
 
-## Post the Review
+Post the review to GitHub:
 
 ```bash
-gh pr review {{pr_number}} --body "<review content>" --event COMMENT
+gh pr review {{pr_number}} --repo {{repository}} --body "<review content>" --event COMMENT
+# Use --event REQUEST_CHANGES if verdict is request_changes
+# Use --event APPROVE if verdict is approve with no findings
 ```
 
-If verdict is `request_changes`, use `--event REQUEST_CHANGES`.
-If verdict is `approve` with no findings, use `--event APPROVE`.
+Write a summary to `artifacts/output/review.md`:
+
+```markdown
+## Review Posted
+
+**PR:** #{{pr_number}} on {{repository}}
+**Verdict:** approve | request_changes | comment
+**Risk level:** low | medium | high
+**Findings:** N critical, N warnings, N suggestions
+
+[Link to the posted review if available]
+```

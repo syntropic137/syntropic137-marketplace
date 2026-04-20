@@ -1,64 +1,65 @@
 ---
 model: sonnet
 allowed-tools: bash, git, read, edit
+description: Apply the diagnosed CI fix, commit, and push in one phase
 ---
 
-You are fixing a CI failure on PR #{{pr_number}} in {{repository}}.
+# Apply Fix
 
-The previous phase diagnosed the root cause. Apply the fix based on that diagnosis.
+Apply the fix for the CI failure on PR `{{pr_number}}` in `{{repository}}` based on the diagnosis from the previous phase. Follow the `Workflow` — edit, commit, and push all happen here (ephemeral constraint: no state carries to the next phase).
 
-## Rules
+## Variables
 
-1. **Minimal changes only** — Fix exactly what's broken. Do not refactor, clean up, or "improve" surrounding code.
-2. **Stay on the PR branch** — All fixes go on `{{branch}}`. Never push to main.
-3. **One commit** — All fixes in a single, descriptive commit.
-4. **Don't break other things** — Run the relevant check locally before committing if possible.
-5. **Skip if low confidence** — If the diagnosis said `should_auto_fix: false`, output a comment explaining the issue instead of attempting a fix.
+PR_NUMBER: {{pr_number}}
+REPOSITORY: {{repository}}
+BRANCH: {{branch}}
+DIAGNOSIS: {{diagnose}}
 
-## Fix Strategies by Type
+## Workflow
 
-### Lint/Format
-```bash
-# Run the project's formatter
-# Python: ruff format, black
-# JS/TS: prettier, eslint --fix
-# Then commit the result
-```
+1. **Review the diagnosis from the previous phase** — see `DIAGNOSIS` in Variables above. If `should_auto_fix` is `false`, skip to the "Cannot Fix" step below.
 
-### Type Check
-- Add missing type annotations
-- Fix type mismatches
-- Add necessary imports
-- Never use `# type: ignore` or `any` as a fix
+2. **Clone the repo and apply fix by type:**
 
-### Test Failure
-- Fix the code to match the test expectation (not the other way around, unless the test is clearly wrong)
-- If a test assertion is wrong due to intentional behavior change, update the test with a clear comment
+   - **lint/format:** Run the project formatter (e.g., `ruff format`, `black`, `prettier --write`, `eslint --fix`), then stage all changed files.
+   - **typecheck:** Add missing annotations, fix type mismatches, add imports. Never use `# type: ignore` or `any` as a fix.
+   - **test:** Fix the code to satisfy the test (not the other way, unless the test is clearly wrong due to an intentional behavior change).
+   - **build:** Fix import paths, missing dependencies, version conflicts.
 
-### Build
-- Fix import paths, missing dependencies
-- Resolve version conflicts
+3. **Rules:**
+   - Minimal changes only — fix exactly what's broken, don't refactor surrounding code
+   - Stay on `{{branch}}` — never push to main
+   - One commit covering all changes
 
-## Process
-
-1. Apply the fix using the Edit tool for targeted changes
-2. Verify the fix looks correct by reading the modified files
-3. Stage and commit:
+4. **Commit and push:**
    ```bash
    git add <specific-files>
    git commit -m "fix: <what was fixed> (#{{pr_number}})"
-   ```
-4. Push:
-   ```bash
    git push origin {{branch}}
    ```
 
-## If Fix Is Not Possible
+5. **Cannot Fix** — if `should_auto_fix` is false, post a comment instead:
+   ```bash
+   gh pr comment {{pr_number}} --repo {{repository}} --body "**CI Self-Healing:** Diagnosed but cannot auto-fix.
 
-If you cannot confidently fix the issue, post a comment instead:
-```bash
-gh pr comment {{pr_number}} --body "**CI Self-Healing:** Diagnosed the failure but cannot auto-fix.
+   **Root cause:** [explanation from diagnosis]
+   **Suggested fix:** [what the author should do]"
+   ```
 
-**Root cause:** [explanation]
-**Suggested fix:** [what the author should do]"
+## Report
+
+Write a fix summary to `artifacts/output/fix-summary.md`:
+
+```markdown
+## Fix Applied
+
+**PR:** #{{pr_number}} on {{repository}}
+**Branch:** {{branch}}
+**Failure type:** lint | typecheck | test | build | other
+**Root cause:** [from diagnosis]
+**Fix:** [what was changed]
+**Commit:** [SHA]
+**Push status:** success | failed | skipped (could not auto-fix)
 ```
+
+If unable to fix, document why and what the author needs to do manually.

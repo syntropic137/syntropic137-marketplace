@@ -1,0 +1,197 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Read min_platform_version from marketplace.json to determine schema version
+      - name: Resolve schema version
+        id: schema
+        run: |
+          VERSION=$(jq -r '.syntropic137.min_platform_version' marketplace.json)
+
+          if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
+            echo "::error file=marketplace.json::Missing or null .syntropic137.min_platform_version"
+            exit 1
+          fi
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error file=marketplace.json::Invalid .syntropic137.min_platform_version '$VERSION' (expected semver format X.Y.Z)"
+            exit 1
+          fi
+
+          echo "version=v${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Schema version: v${VERSION}"
+
+      # Fetch schemas from the core repo at the matching release tag
+      - name: Fetch schemas
+        run: |
+          SCHEMA_VERSION="${{ steps.schema.outputs.version }}"
+          SCHEMA_BASE="https://raw.githubusercontent.com/syntropic137/syntropic137/${SCHEMA_VERSION}/schemas/plugin"
+          mkdir -p .schemas
+
+          for schema in marketplace.schema.json plugin-manifest.schema.json workflow.schema.json triggers.schema.json phase-frontmatter.schema.json; do
+            echo "Fetching ${schema} from ${SCHEMA_BASE}/${schema}"
+            curl -sf "${SCHEMA_BASE}/${schema}" -o ".schemas/${schema}" || {
+              echo "::warning::Could not fetch ${schema} at tag ${SCHEMA_VERSION}, trying main branch"
+              curl -sf "https://raw.githubusercontent.com/syntropic137/syntropic137/main/schemas/plugin/${schema}" -o ".schemas/${schema}"
+            }
+          done
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validator
+        run: pip install check-jsonschema pyyaml
+
+      # Validate marketplace.json
+      - name: Validate marketplace.json
+        run: |
+          check-jsonschema --schemafile .schemas/marketplace.schema.json marketplace.json
+
+      # Validate all plugin manifests
+      - name: Validate plugin manifests
+        run: |
+          find plugins -name "syntropic137-plugin.json" | while read -r manifest; do
+            echo "Validating ${manifest}"
+            check-jsonschema --schemafile .schemas/plugin-manifest.schema.json "${manifest}"
+          done
+
+      # Validate all workflow.yaml files (convert YAML to JSON first)
+      - name: Validate workflow definitions
+        run: |
+          find plugins -name "workflow.yaml" | while read -r workflow; do
+            echo "Validating ${workflow}"
+            tmp_json="$(mktemp)"
+            python3 -c "import yaml,json,sys; d=yaml.safe_load(open(sys.argv[1])); json.dump(d,open(sys.argv[2],'w'))" "${workflow}" "${tmp_json}"
+            check-jsonschema --schemafile .schemas/workflow.schema.json "${tmp_json}"
+            rm -f "${tmp_json}"
+          done
+
+      # Validate all triggers.json files
+      - name: Validate trigger definitions
+        run: |
+          find plugins -name "triggers.json" | while read -r triggers; do
+            echo "Validating ${triggers}"
+            check-jsonschema --schemafile .schemas/triggers.schema.json "${triggers}"
+          done
+
+      # Validate phase frontmatter
+      - name: Validate phase frontmatter
+        run: |
+          # Write extraction script to a temp file to avoid YAML indentation issues
+          extract_script="$(mktemp)"
+          cat > "${extract_script}" << 'PYTHON'
+          import yaml, json, sys
+
+          with open(sys.argv[1]) as f:
+              content = f.read()
+
+          if not content.startswith('---'):
+              print('  No frontmatter — skipping')
+              sys.exit(10)
+
+          parts = content.split('---', 2)
+          if len(parts) < 3:
+              print('  Malformed frontmatter')
+              sys.exit(1)
+
+          data = yaml.safe_load(parts[1])
+          if data is None:
+              print('  Empty frontmatter — skipping')
+              sys.exit(10)
+
+          with open(sys.argv[2], 'w') as out:
+              json.dump(data, out)
+          PYTHON
+
+          find plugins -path "*/phases/*.md" | while read -r phase; do
+            echo "Validating frontmatter: ${phase}"
+            frontmatter_json="$(mktemp)"
+            python3 "${extract_script}" "${phase}" "${frontmatter_json}"
+            status=$?
+
+            if [ "${status}" -eq 10 ]; then
+              rm -f "${frontmatter_json}"
+              continue
+            fi
+
+            if [ "${status}" -ne 0 ]; then
+              rm -f "${frontmatter_json}"
+              rm -f "${extract_script}"
+              exit "${status}"
+            fi
+
+            check-jsonschema --schemafile .schemas/phase-frontmatter.schema.json "${frontmatter_json}"
+            rm -f "${frontmatter_json}"
+          done
+          rm -f "${extract_script}"
+
+      # Structural checks (no schema needed)
+      - name: Structural validation
+        run: |
+          ERRORS=0
+
+          # Every plugin in marketplace.json must have a matching directory
+          for source in $(jq -r '.plugins[].source' marketplace.json); do
+            if [ ! -d "${source}" ]; then
+              echo "::error::Plugin source directory missing: ${source}"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # Every plugin directory must have a manifest
+          for dir in plugins/*/; do
+            if [ ! -f "${dir}syntropic137-plugin.json" ]; then
+              echo "::error::Missing manifest: ${dir}syntropic137-plugin.json"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          # Every workflow must have at least one phase
+          while read -r workflow; do
+            workflow_dir=$(dirname "${workflow}")
+            if [ ! -d "${workflow_dir}/phases" ] || [ -z "$(ls -A "${workflow_dir}/phases/" 2>/dev/null)" ]; then
+              echo "::error::Workflow has no phases: ${workflow}"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done < <(find plugins -name "workflow.yaml")
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "::error::${ERRORS} structural error(s) found"
+            exit 1
+          fi
+
+          echo "All structural checks passed"
+
+  version-bump:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Test version bump script
+        run: pytest .github/scripts/test_check_version_bumps.py -v
+
+      - name: Check plugin version bumps
+        run: python .github/scripts/check_version_bumps.py --base "origin/${{ github.base_ref }}"

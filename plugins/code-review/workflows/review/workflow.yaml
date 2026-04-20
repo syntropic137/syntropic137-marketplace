@@ -13,6 +13,10 @@ inputs:
   - name: branch
     description: "Head branch of the pull request"
     required: true
+  - name: base_branch
+    description: "Base branch the PR targets"
+    required: false
+    default: "main"
   - name: title
     description: "Pull request title for context"
     required: false
@@ -23,6 +27,9 @@ phases:
     order: 1
     execution_type: sequential
     prompt_file: phases/analyze.md
+    input_artifacts: []
+    output_artifacts:
+      - findings
     allowed_tools:
       - bash
       - git
@@ -33,6 +40,10 @@ phases:
     order: 2
     execution_type: sequential
     prompt_file: phases/report.md
+    input_artifacts:
+      - analyze
+    output_artifacts:
+      - review
     allowed_tools:
       - bash
       - git
