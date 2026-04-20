@@ -4,16 +4,11 @@ description: "Automatically diagnose and fix CI failures on pull requests"
 type: implementation
 classification: simple
 
-repository:
-  url: "https://github.com/{{repository}}"
-  ref: "{{branch}}"
+requires_repos: true
 
 inputs:
   - name: pr_number
     description: "Pull request number with the failing CI"
-    required: true
-  - name: repository
-    description: "Repository in owner/repo format"
     required: true
   - name: branch
     description: "Branch with the failure"

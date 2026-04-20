@@ -35,7 +35,7 @@ Comprehensive pull request review:
 
 ### CI Self-Healing (`sdlc-ci-fix`)
 
-**Trigger:** `check_run` — completed with failure (webhook-only)
+**Trigger:** `check_run` — completed with failure
 **Phases:** 3 (diagnose → fix → verify)
 
 Automatic CI failure resolution:
@@ -101,6 +101,6 @@ syn triggers create --workflow sdlc-release-prep --from-package sdlc-trunk
 
 ## Notes
 
-- **CI Self-Healing requires webhooks** — the `check_run` event is not available via the Events API (GitHub limitation). You need a webhook URL configured (e.g., via Cloudflare tunnel).
+- **CI Self-Healing works zero-config** — `check_run` events are now available via Checks API polling (~30-90s latency). Webhooks (e.g., via Cloudflare tunnel) provide real-time delivery but are optional.
 - **PR Review works with polling** — `pull_request` events are available via both webhooks and the Events API poller.
 - **Release Prep works with polling** — `release` events are available via both channels.

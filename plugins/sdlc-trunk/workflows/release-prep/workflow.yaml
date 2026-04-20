@@ -4,14 +4,9 @@ description: "Prepare release notes, validate changelog, and verify release read
 type: deployment
 classification: standard
 
-repository:
-  url: "https://github.com/{{repository}}"
-  ref: "{{tag}}"
+requires_repos: true
 
 inputs:
-  - name: repository
-    description: "Repository in owner/repo format"
-    required: true
   - name: tag
     description: "Release tag (e.g., v1.2.0)"
     required: true
