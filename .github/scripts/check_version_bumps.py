@@ -56,6 +56,17 @@ def get_base_version(manifest_path: Path, base_ref: str) -> str:
         return "0.0.0"
 
 
+def parse_semver(version: str) -> tuple[int, int, int] | None:
+    """Parse a strict X.Y.Z semver string, or None if it doesn't match."""
+    parts = version.split(".")
+    if len(parts) != 3:
+        return None
+    try:
+        return (int(parts[0]), int(parts[1]), int(parts[2]))
+    except ValueError:
+        return None
+
+
 def check_version_bumps(base_ref: str, plugins_dir: Path) -> list[str]:
     """Return a list of error messages for plugins missing a version bump."""
     errors: list[str] = []
@@ -74,10 +85,27 @@ def check_version_bumps(base_ref: str, plugins_dir: Path) -> list[str]:
         current = get_version(manifest)
         base = get_base_version(manifest, base_ref)
 
-        if current == base:
+        current_tuple = parse_semver(current)
+        base_tuple = parse_semver(base)
+
+        if current_tuple is None:
+            errors.append(
+                f"Plugin '{plugin}' has an invalid version '{current}' in {manifest} "
+                "(expected semver X.Y.Z)"
+            )
+        elif base_tuple is None:
+            errors.append(
+                f"Plugin '{plugin}' has an invalid base version '{base}' (expected semver X.Y.Z)"
+            )
+        elif current_tuple == base_tuple:
             errors.append(
                 f"Plugin '{plugin}' changed but version is still {current} — "
                 f"bump the version in {manifest}"
+            )
+        elif current_tuple < base_tuple:
+            errors.append(
+                f"Plugin '{plugin}' version decreased from {base} to {current} in {manifest} — "
+                "bumps must increase the version"
             )
         else:
             print(f"  {plugin}: {base} → {current} ✓")

@@ -1,6 +1,6 @@
 ---
 model: haiku
-allowed-tools: bash, git
+allowed-tools: bash
 description: Verify the fix was committed and pushed, then post a status comment
 ---
 

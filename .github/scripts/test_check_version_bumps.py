@@ -106,6 +106,59 @@ def test_fails_when_version_not_bumped(tmp_path: Path) -> None:
     assert "0.1.0" in errors[0]
 
 
+def test_fails_when_version_decreased(tmp_path: Path) -> None:
+    plugins_dir = tmp_path / "plugins"
+    make_manifest(tmp_path, "my-plugin", "0.2.0")
+
+    git_diff_output = "plugins/my-plugin/workflow.yaml\n"
+    base_manifest_json = json.dumps({"name": "my-plugin", "version": "0.3.0"})
+
+    def fake_run(cmd, **kwargs):
+        class Result:
+            stdout = ""
+            returncode = 0
+        r = Result()
+        if "diff" in cmd:
+            r.stdout = git_diff_output
+        elif "show" in cmd:
+            r.stdout = base_manifest_json
+        return r
+
+    with patch("check_version_bumps.subprocess.run", side_effect=fake_run):
+        errors = check_version_bumps("origin/main", plugins_dir)
+
+    assert len(errors) == 1
+    assert "my-plugin" in errors[0]
+    assert "0.3.0" in errors[0]
+    assert "0.2.0" in errors[0]
+
+
+def test_fails_when_version_malformed(tmp_path: Path) -> None:
+    plugins_dir = tmp_path / "plugins"
+    make_manifest(tmp_path, "my-plugin", "not-a-version")
+
+    git_diff_output = "plugins/my-plugin/workflow.yaml\n"
+    base_manifest_json = json.dumps({"name": "my-plugin", "version": "0.1.0"})
+
+    def fake_run(cmd, **kwargs):
+        class Result:
+            stdout = ""
+            returncode = 0
+        r = Result()
+        if "diff" in cmd:
+            r.stdout = git_diff_output
+        elif "show" in cmd:
+            r.stdout = base_manifest_json
+        return r
+
+    with patch("check_version_bumps.subprocess.run", side_effect=fake_run):
+        errors = check_version_bumps("origin/main", plugins_dir)
+
+    assert len(errors) == 1
+    assert "my-plugin" in errors[0]
+    assert "not-a-version" in errors[0]
+
+
 def test_passes_for_new_plugin_with_any_version(tmp_path: Path) -> None:
     plugins_dir = tmp_path / "plugins"
     make_manifest(tmp_path, "new-plugin", "0.1.0")

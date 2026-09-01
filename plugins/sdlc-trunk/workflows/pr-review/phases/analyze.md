@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git, read
+allowed-tools: bash, read
 description: Deep code review across correctness, security, type safety, testing, and architecture
 ---
 
