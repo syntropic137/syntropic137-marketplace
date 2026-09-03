@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git, read
+allowed-tools: bash, read
 description: Analyze all PR changes and produce a structured findings JSON
 ---
 

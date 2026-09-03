@@ -1,6 +1,6 @@
 ---
 model: haiku
-allowed-tools: bash, git
+allowed-tools: bash
 description: Update the GitHub release with generated notes, or block if audit found blockers
 ---
 

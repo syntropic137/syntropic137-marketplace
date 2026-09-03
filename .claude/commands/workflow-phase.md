@@ -28,7 +28,7 @@ DESCRIPTION: $3
    - `sonnet` — analysis, implementation, decision-making, anything that writes or posts
 
 5. **Determine allowed-tools:**
-   - Always include: `bash, git, read`
+   - Always include: `bash, read`
    - Add `edit` only if this phase modifies files
    - **If edit is included, the phase MUST also commit and push** — ephemeral constraint: no state carries between phases
 
@@ -39,7 +39,7 @@ DESCRIPTION: $3
    ```md
    ---
    model: haiku|sonnet
-   allowed-tools: bash, git, read[, edit]
+   allowed-tools: bash, read[, edit]
    description: DESCRIPTION
    ---
 

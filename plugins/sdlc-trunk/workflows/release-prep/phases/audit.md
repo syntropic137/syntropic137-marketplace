@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git, read
+allowed-tools: bash, read
 description: Audit release readiness — version consistency, changelog, CI, open issues, breaking changes
 ---
 

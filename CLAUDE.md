@@ -30,7 +30,7 @@ The canonical workflow authoring standard (kept in sync with this file) lives in
 ```md
 ---
 model: sonnet|haiku
-allowed-tools: bash, git, read, edit
+allowed-tools: bash, read, edit
 description: One-line description of what this phase does
 ---
 

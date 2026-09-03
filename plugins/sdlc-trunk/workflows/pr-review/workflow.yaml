@@ -35,7 +35,6 @@ phases:
       - pr-context
     allowed_tools:
       - bash
-      - git
       - read
 
   - id: analyze
@@ -49,7 +48,6 @@ phases:
       - findings
     allowed_tools:
       - bash
-      - git
       - read
 
   - id: report
@@ -63,4 +61,3 @@ phases:
       - review
     allowed_tools:
       - bash
-      - git

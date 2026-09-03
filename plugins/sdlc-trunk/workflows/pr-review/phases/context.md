@@ -1,6 +1,6 @@
 ---
 model: haiku
-allowed-tools: bash, git, read
+allowed-tools: bash, read
 description: Gather PR metadata, project stack, and coding standards for the deep review
 ---
 

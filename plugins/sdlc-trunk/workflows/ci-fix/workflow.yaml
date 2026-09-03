@@ -31,7 +31,6 @@ phases:
       - diagnosis
     allowed_tools:
       - bash
-      - git
       - read
 
   - id: fix
@@ -45,7 +44,6 @@ phases:
       - fix-summary
     allowed_tools:
       - bash
-      - git
       - read
       - edit
 
@@ -60,4 +58,3 @@ phases:
       - verification
     allowed_tools:
       - bash
-      - git

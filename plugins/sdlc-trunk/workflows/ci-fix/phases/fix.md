@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git, read, edit
+allowed-tools: bash, read, edit
 description: Apply the diagnosed CI fix, commit, and push in one phase
 ---
 

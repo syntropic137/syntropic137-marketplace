@@ -56,7 +56,7 @@ plugins/<name>/
 ```yaml
 ---
 model: sonnet                    # Claude model (sonnet, opus, haiku)
-allowed-tools: bash, git, read   # Tools available to the agent
+allowed-tools: bash, read        # Tools available to the agent
 argument-hint: "[description]"   # Claude Code argument hint
 ---
 ```

@@ -49,8 +49,20 @@ CI fetches schemas from the core repo at the **matching git tag** (`v0.19.7`). W
 1. Update `min_platform_version` in `marketplace.json`
 2. Fix any validation errors from the new schemas
 3. CI automatically fetches the new schema version
+4. Check whether the core repo added new `@field_validator`/`@model_validator` logic since the previous pin (start at `core repo@main docs/adrs/ADR-053-plugin-schema-generation-strategy.md`, which documents that such logic is invisible to the exported JSON Schemas). If it did, the schema-level checks above won't catch it, only `.github/scripts/check_semantic_rules.py` can.
 
 This ensures your marketplace is always validated against the schemas for the platform version you support.
+
+### Semantic rules (`check_semantic_rules.py`)
+
+Some platform validation lives in Pydantic `field_validator`s that are never exported to the JSON Schemas, so `check-jsonschema` reports content as "valid" even when the platform refuses to load it (e.g. an `allowed_tools` entry outside the platform's closed tool vocabulary). `.github/scripts/check_semantic_rules.py` hand-mirrors the small number of these rules this repo currently knows about.
+
+Its enforcement is gated by `KNOWN_PLATFORM_VERSION`, a constant in the script itself, **independent of `marketplace.json`'s `min_platform_version`**. This is deliberate: it keeps the semantic checks active in every CI run regardless of what floor version the repo happens to be pinned to.
+
+Whenever a human confirms the core repo shipped a release with new validator-only rules:
+
+1. Bump `KNOWN_PLATFORM_VERSION` in `check_semantic_rules.py` to that release, whether or not `min_platform_version` itself is also being raised
+2. If the new rule is one this script doesn't yet mirror, add a check function plus a `RULE_INTRODUCED_AT` entry and rejection-path tests in `test_check_semantic_rules.py`
 
 ### Running validation locally
 
@@ -111,14 +123,14 @@ python3 -c "import yaml,json,sys; json.dump(yaml.safe_load(open('plugins/my-plug
        order: 1
        execution_type: sequential
        prompt_file: phases/execute.md
-       allowed_tools: [bash, git, read]
+       allowed_tools: [bash, read]
    ```
 
 4. **Write phase prompts** (`phases/execute.md`):
    ```markdown
    ---
    model: sonnet
-   allowed-tools: bash, git, read
+   allowed-tools: bash, read
    ---
 
    # Phase prompt
