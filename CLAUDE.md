@@ -72,7 +72,7 @@ Rules:
 - Report section tells the agent exactly what artifact to produce and in what format
 - Be token-efficient: no redundant preamble, no "you are an AI assistant" filler
 - Right-size the model to the work. The tier idea applies on both harnesses, only the names differ. On **claude** phases use **haiku** for lightweight work (context gathering, verification) and **sonnet** for analysis and implementation. On **codex** phases name a concrete model id, there is no tier alias
-- `allowed-tools` is meaningful on **claude** phases only. Declaring it on a phase whose `workflow.yaml` entry sets `provider: codex` raises an error at authoring time, because codex enforces a filesystem sandbox and has no tool vocabulary
+- `allowed-tools` currently enforces nothing on either harness. Per ADR-069 the platform never populates it, so no tool restriction is ever applied and the codex-side rejection guard is unreachable. Declare it to document intent, never as a control. To actually bound a phase, put it on `codex` and set `sandbox: read-only` in `workflow.yaml`
 - **Punctuation style: prefer `:` and `,` over `-` and em dashes** — cleaner, more scannable, plays better with token budgets
 
 ## 3a. Harness Selection (`agent` block in `workflow.yaml`)
@@ -100,7 +100,7 @@ Rules that bite:
 
 - **Codex phases need `CODEX_AUTH_JSON`** on the platform stack. Without it the phase fails to provision. A marketplace plugin that ships codex phases is therefore asking every installer to set that variable, so say so in the plugin README.
 - **Name a concrete model id on every codex phase.** Codex does not report its model on the wire, so omitting `model` leaves the run **unpriced**: no cost lands in `syn costs` for that phase.
-- **`allowed_tools` on a codex phase raises an error** at authoring time. Drop the tool list, or keep that phase on `claude`.
+- **`allowed_tools` is not a control on either harness.** Do not rely on it to restrict a phase. Use `sandbox` on a codex phase, which is the only enforced boundary today.
 - **`sandbox` constrains codex only** today. Declaring `read-only` on a claude phase does not restrict it, so do not document it as a guarantee there.
 - **Claude-only features**: hook events, subagent tracking, TodoWrite, and Claude plugins.
 
@@ -220,6 +220,6 @@ Before submitting or merging a new plugin:
 - [ ] All `gh` subcommands include `--repo {{repository}}`
 - [ ] Phase models match complexity. On claude phases that is haiku vs sonnet, on codex phases it is a concrete model id
 - [ ] No `agent` block in any `workflow.yaml` while `min_platform_version` is below `0.26.0` (see section 3a)
-- [ ] No `allowed-tools` on any phase whose `workflow.yaml` entry declares `provider: codex`
+- [ ] No phase relies on `allowed-tools` as a restriction. It enforces nothing on either harness
 - [ ] Workflow runs end-to-end on a clean workspace with only declared inputs provided
 - [ ] `syntropic137-plugin.json` manifest is valid (CI schema validation runs on push)

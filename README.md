@@ -57,7 +57,7 @@ plugins/<name>/
 ---
 model: sonnet                    # claude phases: sonnet, opus, haiku
                                  # codex phases: a concrete model id
-allowed-tools: bash, git, read   # claude phases only, see below
+allowed-tools: bash, git, read   # documents intent, enforces nothing, see below
 argument-hint: "[description]"   # Claude Code argument hint, claude phases only
 ---
 ```
@@ -89,7 +89,7 @@ What differs between the harnesses:
 |---|---|---|
 | Credential | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | `CODEX_AUTH_JSON` |
 | `model` | tier alias (`haiku`, `sonnet`, `opus`) | concrete model id, required for pricing |
-| `allowed_tools` | honoured | raises an error at authoring time |
+| `allowed_tools` | accepted, enforces nothing (ADR-069) | accepted, enforces nothing |
 | `sandbox` | declared, not enforced | enforced |
 | Slash commands, plugins, hook events, subagent tracking, TodoWrite | available | not available |
 

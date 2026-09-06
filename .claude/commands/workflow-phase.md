@@ -29,7 +29,7 @@ DESCRIPTION: $3
    - On a `claude` phase: `haiku` for context gathering, lightweight reads, simple verification passes. `sonnet` for analysis, implementation, decision-making, anything that writes or posts.
    - On a `codex` phase: name a concrete model id. There is no tier alias, and leaving `model` unset in `workflow.yaml` makes the run unpriced, so no cost appears in reports.
 
-5. **Determine allowed-tools** (`claude` phases only. On a `codex` phase, omit the key: it raises an error at authoring time, because codex enforces a filesystem sandbox and has no tool vocabulary):
+5. **Determine allowed-tools** (documents intent only. Per ADR-069 it enforces nothing on either harness, so never treat it as a restriction. To bound a phase, put it on `codex` and set `sandbox` in `workflow.yaml`):
    - Always include: `bash, git, read`
    - Add `edit` only if this phase modifies files
    - **If edit is included, the phase MUST also commit and push.** Ephemeral constraint: no state carries between phases
