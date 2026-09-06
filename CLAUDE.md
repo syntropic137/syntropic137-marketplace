@@ -32,7 +32,7 @@ Harness selection is declared **per phase in `workflow.yaml`**, never in the pha
 
 **Phase files for codex phases** are plain instruction prompts. Slash commands, Claude plugins, hook events, subagent tracking, and TodoWrite are Claude-only. A phase that needs any of them must stay on `claude`.
 
-The canonical workflow authoring standard (kept in sync with this file) lives in the Syntropic platform repo at `packages/syn-domain/CLAUDE.md`.
+The canonical workflow authoring standard lives in the Syntropic platform repo docs at `apps/syn-docs/content/docs/guide/workflows.mdx`.
 
 ## 3. Phase File Standard Format
 
@@ -72,7 +72,7 @@ Rules:
 - Report section tells the agent exactly what artifact to produce and in what format
 - Be token-efficient: no redundant preamble, no "you are an AI assistant" filler
 - Right-size the model to the work. The tier idea applies on both harnesses, only the names differ. On **claude** phases use **haiku** for lightweight work (context gathering, verification) and **sonnet** for analysis and implementation. On **codex** phases name a concrete model id, there is no tier alias
-- `allowed-tools` currently enforces nothing on either harness. Per ADR-069 the platform never populates it, so no tool restriction is ever applied and the codex-side rejection guard is unreachable. Declare it to document intent, never as a control. To actually bound a phase, put it on `codex` and set `sandbox: read-only` in `workflow.yaml`
+- `allowed-tools` currently enforces nothing on either harness. Per ADR-069 the platform never populates it, so no tool restriction is ever applied and the codex-side rejection guard is unreachable. Declare it to document intent, never as a control. To actually bound a phase, put it on `codex` and set `sandbox` in `workflow.yaml`. Note `sandbox` is filesystem-only, network egress is available at every level, and a phase that publishes under `artifacts/output/` needs `full-access`
 - **Punctuation style: prefer `:` and `,` over `-` and em dashes** — cleaner, more scannable, plays better with token budgets
 
 ## 3a. Harness Selection (`agent` block in `workflow.yaml`)

@@ -1,7 +1,7 @@
 ---
 allowed-tools: Read, Write, WebFetch
 description: Scaffold a new workflow phase file for a Syntropic137 workflow
-argument-hint: [workflow-path] [phase-name] [description]
+argument-hint: "[workflow-path] [phase-name] [description]"
 model: sonnet
 ---
 
@@ -19,7 +19,7 @@ DESCRIPTION: $3
 
 ## Workflow
 
-1. **Load the current phase standard**: read `CLAUDE.md` in this repo (the live source of truth for the phase format, including section 3a on harness selection). If the phase will run on `claude`, then WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command spec. If it will run on `codex`, skip that fetch: slash commands and skills are not available there.
+1. **Load the current phase standard**: read `CLAUDE.md` in this repo (the live source of truth for the phase format, including section 3a on harness selection). If the phase will run on `claude`, then WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command spec. If it will run on `codex`, skip that fetch: slash commands and Claude plugins are not available there. Skills are, the pinned skills CLI installs them per harness.
 
 2. **Read the workflow inputs and the harness**: Read `WORKFLOW_PATH/workflow.yaml` to extract the `inputs` list. These become the Variables section in the new phase. In the same pass, check whether the workflow's phase entries carry an `agent` block. Absent means the phase runs on `claude`.
 
@@ -36,7 +36,9 @@ DESCRIPTION: $3
 
 6. **Determine artifact name**: derive a kebab-case output artifact name from PHASE_NAME (e.g., "Analyze Changes" gives `findings`, "Gather Context" gives `context`).
 
-7. **Write the phase file** using this exact structure:
+7. **Write the phase file** using this structure. The frontmatter differs by harness.
+
+   For a **claude** phase:
 
    ```md
    ---
@@ -66,6 +68,21 @@ DESCRIPTION: $3
    Write output to `artifacts/output/<artifact-name>.md`:
    [Describe the structure and content of the output file.]
    ```
+
+   For a **codex** phase, omit `model` and `allowed-tools` from the frontmatter.
+   A frontmatter `model:` overrides `agent.model`, so leaving a claude alias
+   like `sonnet` there would hand a Claude model name to a codex run. Set the
+   concrete model id in the phase's `agent` block in `workflow.yaml` instead:
+
+   ```yaml
+   agent:
+     provider: codex
+     model: gpt-5.6-sol
+   ```
+
+   The body below is the same for both harnesses, except that a codex phase
+   must not invoke slash commands.
+
 
 8. **Add artifact declarations to workflow.yaml**: open `WORKFLOW_PATH/workflow.yaml` and add `input_artifacts` and `output_artifacts` to this phase's entry.
 
