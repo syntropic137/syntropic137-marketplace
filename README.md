@@ -55,11 +55,47 @@ plugins/<name>/
 
 ```yaml
 ---
-model: sonnet                    # Claude model (sonnet, opus, haiku)
-allowed-tools: bash, git, read   # Tools available to the agent
-argument-hint: "[description]"   # Claude Code argument hint
+model: sonnet                    # claude phases: sonnet, opus, haiku
+                                 # codex phases: a concrete model id
+allowed-tools: bash, git, read   # claude phases only, see below
+argument-hint: "[description]"   # Claude Code argument hint, claude phases only
 ---
 ```
+
+Frontmatter carries no harness field. Which harness a phase runs on is declared per phase in `workflow.yaml`, not here.
+
+### Harness Selection
+
+Phases run on Claude Code or on OpenAI Codex, chosen per phase in `workflow.yaml`:
+
+```yaml
+phases:
+  - id: implement
+    prompt_file: phases/implement.md
+    agent:
+      provider: claude          # claude | codex, claude is the default
+      model: sonnet
+  - id: review
+    prompt_file: phases/review.md
+    agent:
+      provider: codex
+      model: gpt-5.6-sol        # name a concrete model id
+      sandbox: read-only        # codex honours this, claude does not
+```
+
+What differs between the harnesses:
+
+| | `claude` | `codex` |
+|---|---|---|
+| Credential | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | `CODEX_AUTH_JSON` |
+| `model` | tier alias (`haiku`, `sonnet`, `opus`) | concrete model id, required for pricing |
+| `allowed_tools` | honoured | raises an error at authoring time |
+| `sandbox` | declared, not enforced | enforced |
+| Slash commands, plugins, hook events, subagent tracking, TodoWrite | available | not available |
+
+A codex phase that declares no `model` still runs, but the platform records **no cost** for it, because codex does not report its model on the wire.
+
+**Not yet usable in this marketplace.** The `agent` block first appears in the platform schema at v0.26.0 (`sandbox` at v0.28.0), and `marketplace.json` declares `min_platform_version: 0.25.2`. CI validates against the schema at that tag, which forbids unknown keys, so an `agent` block fails validation today. Every shipped plugin here runs on the default `claude` harness until that floor is raised.
 
 ### Trigger Format
 

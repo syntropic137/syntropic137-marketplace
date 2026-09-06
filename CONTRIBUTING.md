@@ -126,6 +126,10 @@ python3 -c "import yaml,json,sys; json.dump(yaml.safe_load(open('plugins/my-plug
    Your instructions to the agent here. Use `{{repository}}` to reference inputs.
    ```
 
+   Phases run on one of two harnesses, `claude` (`claude -p`) or `codex` (`codex exec`), chosen per phase by an `agent` block on the phase entry in `workflow.yaml`. Frontmatter has no harness field. Write prompts for the harness the phase will actually run on: slash commands, Claude plugins, hook events, subagent tracking, and TodoWrite are Claude-only, and `allowed-tools` is honoured on claude phases but raises an error on codex phases.
+
+   > **Note:** you cannot ship an `agent` block from this marketplace yet. The block first appears in the platform's `workflow.schema.json` at v0.26.0 (`sandbox` at v0.28.0), CI validates against the schema at the tag named by `min_platform_version` in `marketplace.json` (currently `0.25.2`), and that schema forbids unknown keys. Write plugins for the default `claude` harness until the floor is raised. See `CLAUDE.md` section 3a.
+
 5. **Add triggers** (optional, `triggers.json`):
    ```json
    {
