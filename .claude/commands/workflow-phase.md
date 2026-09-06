@@ -80,7 +80,7 @@ DESCRIPTION: $3
      model: gpt-5.6-sol
    ```
 
-   The body below is the same for both harnesses, except that a codex phase
+   The body above is the same for both harnesses, except that a codex phase
    must not invoke slash commands.
 
 
