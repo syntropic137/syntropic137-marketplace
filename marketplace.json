@@ -2,7 +2,7 @@
   "name": "syntropic137-marketplace",
   "syntropic137": {
     "type": "workflow-marketplace",
-    "min_platform_version": "0.25.2"
+    "min_platform_version": "0.26.0"
   },
   "plugins": [
     {

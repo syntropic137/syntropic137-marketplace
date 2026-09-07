@@ -1,13 +1,15 @@
 ---
 allowed-tools: Read, Write, WebFetch
-description: Scaffold a new workflow phase file following the Claude command standard
-argument-hint: [workflow-path] [phase-name] [description]
+description: Scaffold a new workflow phase file for a Syntropic137 workflow
+argument-hint: "[workflow-path] [phase-name] [description]"
 model: sonnet
 ---
 
 # Workflow Phase
 
-Scaffold a new phase file at the correct path under `WORKFLOW_PATH`, following the Claude command standard. Reference `Variables` and follow the `Workflow` to produce a complete, production-ready phase file.
+Scaffold a new phase file at the correct path under `WORKFLOW_PATH`. Reference `Variables` and follow the `Workflow` to produce a complete, production-ready phase file.
+
+A phase runs on one of two harnesses, `claude` (`claude -p`) or `codex` (`codex exec`), selected per phase by an `agent` block in `workflow.yaml`. Phase frontmatter has no harness field. Shipped marketplace plugins currently run on the default `claude` harness, so scaffold to the Claude command standard unless the workflow's `workflow.yaml` says otherwise. See `CLAUDE.md` section 3a.
 
 ## Variables
 
@@ -17,24 +19,26 @@ DESCRIPTION: $3
 
 ## Workflow
 
-1. **Load the current phase standard** — read `CLAUDE.md` in this repo (the live source of truth for the phase format). Then WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command spec.
+1. **Load the current phase standard**: read `CLAUDE.md` in this repo (the live source of truth for the phase format, including section 3a on harness selection). If the phase will run on `claude`, then WebFetch https://code.claude.com/docs/en/commands.md for the latest Claude command spec. If it will run on `codex`, skip that fetch: slash commands and Claude plugins are not available there. Skills are, the pinned skills CLI installs them per harness.
 
-2. **Read the workflow inputs** — Read `WORKFLOW_PATH/workflow.yaml` to extract the `inputs` list. These become the Variables section in the new phase.
+2. **Read the workflow inputs and the harness**: Read `WORKFLOW_PATH/workflow.yaml` to extract the `inputs` list. These become the Variables section in the new phase. In the same pass, check whether the workflow's phase entries carry an `agent` block. Absent means the phase runs on `claude`.
 
-3. **Determine the target path** — slugify `PHASE_NAME` (lowercase, hyphens) → `WORKFLOW_PATH/phases/<phase-name>.md`.
+3. **Determine the target path**: slugify `PHASE_NAME` (lowercase, hyphens) → `WORKFLOW_PATH/phases/<phase-name>.md`.
 
-4. **Choose the right model:**
-   - `haiku` — context gathering, lightweight reads, simple verification passes
-   - `sonnet` — analysis, implementation, decision-making, anything that writes or posts
+4. **Choose the right model** for the phase's harness. The tier idea is the same on both, only the names differ:
+   - On a `claude` phase: `haiku` for context gathering, lightweight reads, simple verification passes. `sonnet` for analysis, implementation, decision-making, anything that writes or posts.
+   - On a `codex` phase: name a concrete model id. There is no tier alias, and leaving `model` unset in `workflow.yaml` makes the run unpriced, so no cost appears in reports.
 
-5. **Determine allowed-tools:**
+5. **Determine allowed-tools** (documents intent only. Per ADR-069 it enforces nothing on either harness, so never treat it as a restriction. `sandbox` is the only real control, and it is not available from this marketplace yet: it needs a 0.28.0 floor and the current floor is 0.26.0):
    - Always include: `bash, git, read`
    - Add `edit` only if this phase modifies files
-   - **If edit is included, the phase MUST also commit and push** — ephemeral constraint: no state carries between phases
+   - **If edit is included, the phase MUST also commit and push.** Ephemeral constraint: no state carries between phases
 
-6. **Determine artifact name** — derive a kebab-case output artifact name from PHASE_NAME (e.g., "Analyze Changes" → `findings`, "Gather Context" → `context`).
+6. **Determine artifact name**: derive a kebab-case output artifact name from PHASE_NAME (e.g., "Analyze Changes" gives `findings`, "Gather Context" gives `context`).
 
-7. **Write the phase file** using this exact structure:
+7. **Write the phase file** using this structure. The frontmatter differs by harness.
+
+   For a **claude** phase:
 
    ```md
    ---
@@ -65,7 +69,22 @@ DESCRIPTION: $3
    [Describe the structure and content of the output file.]
    ```
 
-8. **Add artifact declarations to workflow.yaml** — open `WORKFLOW_PATH/workflow.yaml` and add `input_artifacts` and `output_artifacts` to this phase's entry.
+   For a **codex** phase, omit `model` and `allowed-tools` from the frontmatter.
+   A frontmatter `model:` overrides `agent.model`, so leaving a claude alias
+   like `sonnet` there would hand a Claude model name to a codex run. Set the
+   concrete model id in the phase's `agent` block in `workflow.yaml` instead:
+
+   ```yaml
+   agent:
+     provider: codex
+     model: gpt-5.6-sol
+   ```
+
+   The body above is the same for both harnesses, except that a codex phase
+   must not invoke slash commands.
+
+
+8. **Add artifact declarations to workflow.yaml**: open `WORKFLOW_PATH/workflow.yaml` and add `input_artifacts` and `output_artifacts` to this phase's entry.
 
 9. **Ephemeral reminder:** if this phase uses `edit`, verify the Workflow includes `git add`, `git commit`, and `git push origin {{branch}}` before the Report step.
 
@@ -74,6 +93,7 @@ DESCRIPTION: $3
 - Path of the created phase file
 - workflow.yaml updated with `input_artifacts` / `output_artifacts` for this phase
 - Variables detected from workflow.yaml inputs
+- Harness the phase runs on, and where that was determined from
 - Model chosen and why
 - Output artifact name and path
 - Any inputs referenced that don't appear in workflow.yaml (flag as missing)

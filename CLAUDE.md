@@ -10,22 +10,33 @@ Users install plugins with:
 syn workflow install <plugin-name>
 ```
 
-## 2. Workflow Phase Files = Claude Commands
+## 2. Phases Run On A Harness, Chosen Per Phase
 
-Workflow phase files (`phases/*.md`) follow the **Claude command standard** exactly. A workflow is a multi-phase command — each phase is one command invocation. When authoring or reviewing phase files, treat them as Claude custom slash commands.
+A workflow is a multi-phase pipeline. Each phase is one headless agent invocation, and the platform runs that invocation on one of two harnesses:
 
-Key docs to fetch on demand:
+| `agent.provider` | Runs | Notes |
+|---|---|---|
+| `claude` | `claude -p` | The default when no `agent` block is declared |
+| `codex` | `codex exec` | Requires `CODEX_AUTH_JSON` on the platform stack |
+
+Harness selection is declared **per phase in `workflow.yaml`**, never in the phase markdown. See section 3a.
+
+**Phase files for claude phases** follow the Claude command standard: the body may reference slash commands and skills by name. When authoring or reviewing one, treat it as a Claude custom slash command and fetch the relevant doc first:
 
 - Commands: https://code.claude.com/docs/en/commands.md
 - Skills: https://code.claude.com/docs/en/skills.md
 - Hooks: https://code.claude.com/docs/en/hooks.md
 - Settings and tools: https://code.claude.com/docs/en/settings.md
 
-**Rule: WebFetch the relevant doc above before authoring any phase file, command, or skill.**
+**Rule: WebFetch the relevant doc above before authoring any phase file for a claude phase, or any command or skill.**
 
-The canonical workflow authoring standard (kept in sync with this file) lives in the Syntropic platform repo at `packages/syn-domain/CLAUDE.md`.
+**Phase files for codex phases** are plain instruction prompts. Slash commands, Claude plugins, hook events, subagent tracking, and TodoWrite are Claude-only. A phase that needs any of them must stay on `claude`.
+
+The canonical workflow authoring standard lives in the Syntropic platform repo docs at `apps/syn-docs/content/docs/guide/workflows.mdx`.
 
 ## 3. Phase File Standard Format
+
+Phase frontmatter carries **no harness field**. The platform's `phase-frontmatter.schema.json` sets `additionalProperties: false` and defines only `model`, `allowed-tools`, `timeout-seconds`, `execution-type`, `description`, `argument-hint`, and the deprecated `max-tokens` (declaring which is itself an error). An `agent:` key here is a validation error. Harness selection belongs in `workflow.yaml` (section 3a).
 
 ```md
 ---
@@ -60,8 +71,59 @@ Rules:
 - Workflow steps are numbered
 - Report section tells the agent exactly what artifact to produce and in what format
 - Be token-efficient: no redundant preamble, no "you are an AI assistant" filler
-- Use **haiku** for lightweight phases (context gathering, verification); use **sonnet** for analysis and implementation
+- Right-size the model to the work. The tier idea applies on both harnesses, only the names differ. On **claude** phases use **haiku** for lightweight work (context gathering, verification) and **sonnet** for analysis and implementation. On **codex** phases name a concrete model id, there is no tier alias
+- `allowed-tools` currently enforces nothing on either harness. Per ADR-069 the platform never populates it, so no tool restriction is ever applied and the codex-side rejection guard is unreachable. Declare it to document intent, never as a control. To actually bound a phase, put it on `codex` and set `sandbox` in `workflow.yaml`. Note `sandbox` is filesystem-only, network egress is available at every level, and a phase that publishes under `artifacts/output/` needs `full-access`
 - **Punctuation style: prefer `:` and `,` over `-` and em dashes** — cleaner, more scannable, plays better with token budgets
+
+## 3a. Harness Selection (`agent` block in `workflow.yaml`)
+
+The platform selects a harness per phase through an `agent` block on the phase entry in `workflow.yaml`. There is no CLI flag and no environment variable for it, and it cannot be set from phase frontmatter.
+
+```yaml
+phases:
+  - id: implement
+    prompt_file: phases/implement.md
+    agent:
+      provider: claude          # claude | codex, claude is the default
+      model: sonnet
+  - id: review
+    prompt_file: phases/review.md
+    agent:
+      provider: codex
+      model: gpt-5.6-sol        # name a concrete model, see below
+      # sandbox: read-only      # NOT usable yet, needs a 0.28.0 floor
+```
+
+Fields: `provider`, `model`, `sandbox` (`read-only` | `workspace-write` | `full-access`), `allow_delegation`.
+
+Rules that bite:
+
+- **Codex phases need `CODEX_AUTH_JSON`** on the platform stack. Without it the phase fails to provision. A marketplace plugin that ships codex phases is therefore asking every installer to set that variable, so say so in the plugin README.
+- **Name a concrete model id on every codex phase.** Codex does not report its model on the wire, so omitting `model` leaves the run **unpriced**: no cost lands in `syn costs` for that phase.
+- **`allowed_tools` is not a control on either harness.** Do not rely on it to restrict a phase. Use `sandbox` on a codex phase, which is the only enforced boundary today.
+- **`sandbox` constrains codex only** today. Declaring `read-only` on a claude phase does not restrict it, so do not document it as a guarantee there.
+- **Claude-only features**: hook events, subagent tracking, TodoWrite, and Claude plugins.
+
+### Version floor: what an `agent` block may declare
+
+`marketplace.json` declares `min_platform_version: 0.26.0`, and
+`.github/workflows/validate.yml` fetches `workflow.schema.json` from the core
+repo **at that exact tag** and validates every plugin against it. The schema
+sets `additionalProperties: false`, so a key that does not exist at the floor is
+a hard CI failure rather than a silent ignore.
+
+At the 0.26.0 floor:
+
+- `provider`, `model` and `allow_delegation` are available. Use them.
+- `sandbox` is **not**. It first appears at v0.28.0. Declaring it fails
+  validation until the floor is raised again.
+
+Raising the floor drops installers on platforms older than the named version,
+so treat each raise as a compatibility decision rather than a cleanup.
+
+Shipped plugins under `plugins/` currently declare no `agent` block, so every
+phase runs on the default `claude` harness. That is now a choice, not a
+constraint.
 
 ## 4. Artifact System
 
@@ -145,7 +207,7 @@ plugins/
 |---|---|
 | `id` | Kebab-case identifier |
 | `inputs` | List of `{name, description, required, default}` |
-| `phases` | Ordered list with `id`, `name`, `order`, `execution_type`, `prompt_file`, `input_artifacts`, `output_artifacts`, `allowed_tools` |
+| `phases` | Ordered list with `id`, `name`, `order`, `execution_type`, `prompt_file`, `input_artifacts`, `output_artifacts`, `allowed_tools`, and (platform >= 0.26.0 only, see section 3a) `agent` |
 
 ## 8. Existing Plugins
 
@@ -164,6 +226,8 @@ Before submitting or merging a new plugin:
 - [ ] `input_artifacts` and `output_artifacts` declared in every phase of `workflow.yaml`
 - [ ] Every phase that edits files also commits and pushes in the same phase
 - [ ] All `gh` subcommands include `--repo {{repository}}`
-- [ ] Phase models match complexity (haiku vs sonnet)
+- [ ] Phase models match complexity. On claude phases that is haiku vs sonnet, on codex phases it is a concrete model id
+- [ ] No `agent` block in any `workflow.yaml` while `min_platform_version` is below `0.26.0` (see section 3a)
+- [ ] No phase relies on `allowed-tools` as a restriction. It enforces nothing on either harness
 - [ ] Workflow runs end-to-end on a clean workspace with only declared inputs provided
 - [ ] `syntropic137-plugin.json` manifest is valid (CI schema validation runs on push)

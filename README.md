@@ -55,11 +55,47 @@ plugins/<name>/
 
 ```yaml
 ---
-model: sonnet                    # Claude model (sonnet, opus, haiku)
-allowed-tools: bash, git, read   # Tools available to the agent
-argument-hint: "[description]"   # Claude Code argument hint
+model: sonnet                    # claude phases: sonnet, opus, haiku
+                                 # codex phases: a concrete model id
+allowed-tools: bash, git, read   # documents intent, enforces nothing, see below
+argument-hint: "[description]"   # Claude Code argument hint, claude phases only
 ---
 ```
+
+Frontmatter carries no harness field. Which harness a phase runs on is declared per phase in `workflow.yaml`, not here.
+
+### Harness Selection
+
+Phases run on Claude Code or on OpenAI Codex, chosen per phase in `workflow.yaml`:
+
+```yaml
+phases:
+  - id: implement
+    prompt_file: phases/implement.md
+    agent:
+      provider: claude          # claude | codex, claude is the default
+      model: sonnet
+  - id: review
+    prompt_file: phases/review.md
+    agent:
+      provider: codex
+      model: gpt-5.6-sol        # name a concrete model id
+      # sandbox: read-only      # NOT usable yet, needs a 0.28.0 floor
+```
+
+What differs between the harnesses:
+
+| | `claude` | `codex` |
+|---|---|---|
+| Credential | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | `CODEX_AUTH_JSON` |
+| `model` | tier alias (`haiku`, `sonnet`, `opus`) | concrete model id, required for pricing |
+| `allowed_tools` | accepted, enforces nothing (ADR-069) | accepted, enforces nothing |
+| `sandbox` | declared, not enforced | enforced |
+| Slash commands, plugins, hook events, subagent tracking, TodoWrite | available | not available |
+
+A codex phase that declares no `model` still runs, but the platform records **no cost** for it, because codex does not report its model on the wire.
+
+**Usable as of the 0.26.0 floor.** `marketplace.json` declares `min_platform_version: 0.26.0`, and CI validates against the schema at that tag, so a phase may declare `provider`, `model` and `allow_delegation` in its `agent` block. `sandbox` is **not** available yet: it first appears at v0.28.0 and the schema forbids unknown keys, so declaring it fails validation. Raising the floor drops installers on platforms older than the named version, so treat it as a compatibility decision.
 
 ### Trigger Format
 
