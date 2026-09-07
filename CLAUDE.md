@@ -91,7 +91,7 @@ phases:
     agent:
       provider: codex
       model: gpt-5.6-sol        # name a concrete model, see below
-      sandbox: read-only        # codex honours this, claude does not
+      # sandbox: read-only      # NOT usable yet, needs a 0.28.0 floor
 ```
 
 Fields: `provider`, `model`, `sandbox` (`read-only` | `workspace-write` | `full-access`), `allow_delegation`.
@@ -104,18 +104,26 @@ Rules that bite:
 - **`sandbox` constrains codex only** today. Declaring `read-only` on a claude phase does not restrict it, so do not document it as a guarantee there.
 - **Claude-only features**: hook events, subagent tracking, TodoWrite, and Claude plugins.
 
-### KNOWN GAP: this marketplace cannot ship `agent` blocks yet
+### Version floor: what an `agent` block may declare
 
-Every shipped plugin under `plugins/` declares **no** `agent` block, so every phase runs on the default `claude` harness. That is not an oversight in the phase files, it is a version floor:
+`marketplace.json` declares `min_platform_version: 0.26.0`, and
+`.github/workflows/validate.yml` fetches `workflow.schema.json` from the core
+repo **at that exact tag** and validates every plugin against it. The schema
+sets `additionalProperties: false`, so a key that does not exist at the floor is
+a hard CI failure rather than a silent ignore.
 
-- `marketplace.json` declares `syntropic137.min_platform_version: 0.26.0`.
-- CI (`.github/workflows/validate.yml`) fetches `workflow.schema.json` from the platform repo at that exact tag and validates every `workflow.yaml` against it.
-- `provider`, `model` and `allow_delegation` are available at the current floor of **v0.26.0**. `sandbox` first appears in **v0.28.0**, so declaring it fails validation until the floor is raised again.
-- The schema sets `additionalProperties: false`, so adding an `agent` block today fails CI rather than being ignored.
+At the 0.26.0 floor:
 
-**Do not add `agent` blocks to shipped plugins until `min_platform_version` is raised.** Raising it to `0.26.0` unlocks `provider`, `model` and `allow_delegation`. Raising it to `0.28.0` also unlocks `sandbox`. Either raise excludes installers on older platform versions, so it is a marketplace-wide compatibility decision, not a per-plugin one.
+- `provider`, `model` and `allow_delegation` are available. Use them.
+- `sandbox` is **not**. It first appears at v0.28.0. Declaring it fails
+  validation until the floor is raised again.
 
-A second, smaller gap: even once the floor is raised, there is no way to declare a harness from a phase markdown file. Frontmatter forbids unknown keys and has no `agent` field. A phase file's `model: sonnet` therefore carries no harness information on its own, and a reader has to open `workflow.yaml` to know which harness the phase runs on.
+Raising the floor drops installers on platforms older than the named version,
+so treat each raise as a compatibility decision rather than a cleanup.
+
+Shipped plugins under `plugins/` currently declare no `agent` block, so every
+phase runs on the default `claude` harness. That is now a choice, not a
+constraint.
 
 ## 4. Artifact System
 

@@ -80,7 +80,7 @@ phases:
     agent:
       provider: codex
       model: gpt-5.6-sol        # name a concrete model id
-      sandbox: read-only        # codex honours this, claude does not
+      # sandbox: read-only      # NOT usable yet, needs a 0.28.0 floor
 ```
 
 What differs between the harnesses:
