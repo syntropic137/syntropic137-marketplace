@@ -108,9 +108,9 @@ Rules that bite:
 
 Every shipped plugin under `plugins/` declares **no** `agent` block, so every phase runs on the default `claude` harness. That is not an oversight in the phase files, it is a version floor:
 
-- `marketplace.json` declares `syntropic137.min_platform_version: 0.25.2`.
+- `marketplace.json` declares `syntropic137.min_platform_version: 0.26.0`.
 - CI (`.github/workflows/validate.yml`) fetches `workflow.schema.json` from the platform repo at that exact tag and validates every `workflow.yaml` against it.
-- The `agent` block does not exist in the v0.25.2 schema. `provider`, `model` and `allow_delegation` first appear in **v0.26.0**. `sandbox` first appears in **v0.28.0**.
+- `provider`, `model` and `allow_delegation` are available at the current floor of **v0.26.0**. `sandbox` first appears in **v0.28.0**, so declaring it fails validation until the floor is raised again.
 - The schema sets `additionalProperties: false`, so adding an `agent` block today fails CI rather than being ignored.
 
 **Do not add `agent` blocks to shipped plugins until `min_platform_version` is raised.** Raising it to `0.26.0` unlocks `provider`, `model` and `allow_delegation`. Raising it to `0.28.0` also unlocks `sandbox`. Either raise excludes installers on older platform versions, so it is a marketplace-wide compatibility decision, not a per-plugin one.

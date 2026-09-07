@@ -95,7 +95,7 @@ What differs between the harnesses:
 
 A codex phase that declares no `model` still runs, but the platform records **no cost** for it, because codex does not report its model on the wire.
 
-**Not yet usable in this marketplace.** The `agent` block first appears in the platform schema at v0.26.0 (`sandbox` at v0.28.0), and `marketplace.json` declares `min_platform_version: 0.25.2`. CI validates against the schema at that tag, which forbids unknown keys, so an `agent` block fails validation today. Every shipped plugin here runs on the default `claude` harness until that floor is raised.
+**Usable as of the 0.26.0 floor.** `marketplace.json` declares `min_platform_version: 0.26.0`, and CI validates against the schema at that tag, so a phase may declare `provider`, `model` and `allow_delegation` in its `agent` block. `sandbox` is **not** available yet: it first appears at v0.28.0 and the schema forbids unknown keys, so declaring it fails validation. Raising the floor drops installers on platforms older than the named version, so treat it as a compatibility decision.
 
 ### Trigger Format
 
