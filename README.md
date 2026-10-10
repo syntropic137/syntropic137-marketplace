@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/banner.svg" alt="Syntropic137 Marketplace" width="100%">
+</p>
+
 # Syntropic137 Marketplace
 
 Official workflow plugin marketplace for [Syntropic137](https://github.com/syntropic137/syntropic137). Install workflow packages with embedded triggers using the `syn` CLI.
