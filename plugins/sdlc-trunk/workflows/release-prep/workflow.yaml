@@ -31,9 +31,8 @@ phases:
     output_artifacts:
       - release-audit
     allowed_tools:
-      - bash
-      - git
-      - read
+      - Bash
+      - Read
 
   - id: notes
     name: "Generate Release Notes"
@@ -41,12 +40,11 @@ phases:
     execution_type: sequential
     prompt_file: phases/notes.md
     input_artifacts:
-      - audit
+      - release-audit
     output_artifacts:
       - release-notes
     allowed_tools:
-      - bash
-      - git
+      - Bash
 
   - id: publish
     name: "Finalize Release"
@@ -54,10 +52,9 @@ phases:
     execution_type: sequential
     prompt_file: phases/publish.md
     input_artifacts:
-      - audit
-      - notes
+      - release-audit
+      - release-notes
     output_artifacts:
       - release-summary
     allowed_tools:
-      - bash
-      - git
+      - Bash

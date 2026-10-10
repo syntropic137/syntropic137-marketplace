@@ -30,9 +30,8 @@ phases:
     output_artifacts:
       - diagnosis
     allowed_tools:
-      - bash
-      - git
-      - read
+      - Bash
+      - Read
 
   - id: fix
     name: "Apply Fix"
@@ -40,14 +39,13 @@ phases:
     execution_type: sequential
     prompt_file: phases/fix.md
     input_artifacts:
-      - diagnose
+      - diagnosis
     output_artifacts:
       - fix-summary
     allowed_tools:
-      - bash
-      - git
-      - read
-      - edit
+      - Bash
+      - Read
+      - Edit
 
   - id: verify
     name: "Verify Fix"
@@ -55,9 +53,8 @@ phases:
     execution_type: sequential
     prompt_file: phases/verify.md
     input_artifacts:
-      - fix
+      - fix-summary
     output_artifacts:
       - verification
     allowed_tools:
-      - bash
-      - git
+      - Bash
