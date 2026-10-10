@@ -34,9 +34,8 @@ phases:
     output_artifacts:
       - pr-context
     allowed_tools:
-      - bash
-      - git
-      - read
+      - Bash
+      - Read
 
   - id: analyze
     name: "Deep Analysis"
@@ -44,13 +43,12 @@ phases:
     execution_type: sequential
     prompt_file: phases/analyze.md
     input_artifacts:
-      - context
+      - pr-context
     output_artifacts:
       - findings
     allowed_tools:
-      - bash
-      - git
-      - read
+      - Bash
+      - Read
 
   - id: report
     name: "Post Review"
@@ -58,9 +56,8 @@ phases:
     execution_type: sequential
     prompt_file: phases/report.md
     input_artifacts:
-      - analyze
+      - findings
     output_artifacts:
       - review
     allowed_tools:
-      - bash
-      - git
+      - Bash
