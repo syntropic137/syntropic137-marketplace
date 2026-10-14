@@ -72,7 +72,7 @@ Rules:
 - Report section tells the agent exactly what artifact to produce and in what format
 - Be token-efficient: no redundant preamble, no "you are an AI assistant" filler
 - Right-size the model to the work. The tier idea applies on both harnesses, only the names differ. On **claude** phases use **haiku** for lightweight work (context gathering, verification) and **sonnet** for analysis and implementation. On **codex** phases name a concrete model id, there is no tier alias
-- `allowed-tools` is enforced on platform 0.28.0 and later, including 1.0.0 (0.26.0 and 0.27.0, still inside the floor, accept it and restrict nothing). It is a **fallback**: it applies only when the phase entry in `workflow.yaml` does not set `allowed_tools`. A `workflow.yaml` value wins, and an explicit `allowed_tools: []` there means unrestricted. See section 3a for what it does on each harness. Use the closed tool vocabulary (`Bash`, `Edit`, `Glob`, `Grep`, `Read`, `Skill`, `Task`, `WebFetch`, `WebSearch`, `Write`); `git` is not a tool and is refused. Omit it entirely on a codex phase
+- `allowed-tools` is enforced on platform 0.28.0 and later, including 1.0.0 (on 0.26.0 and 0.27.0, still inside the floor, it restricts nothing). It is a **fallback**: it applies only when the phase entry in `workflow.yaml` does not set `allowed_tools`. A `workflow.yaml` value wins, and an explicit `allowed_tools: []` there means unrestricted. See section 3a for what it does on each harness. Use the closed tool vocabulary (`Bash`, `Edit`, `Glob`, `Grep`, `Read`, `Skill`, `Task`, `WebFetch`, `WebSearch`, `Write`); `git` is not a tool and is refused. Omit it entirely on a codex phase
 - **Punctuation style: prefer `:` and `,` over `-` and em dashes** — cleaner, more scannable, plays better with token budgets
 
 ## 3a. Harness Selection (`agent` block in `workflow.yaml`)
@@ -101,9 +101,9 @@ Rules that bite:
 - **Codex phases need `CODEX_AUTH_JSON`** on the platform stack. Without it the phase fails to provision. A marketplace plugin that ships codex phases is therefore asking every installer to set that variable, so say so in the plugin README.
 - **Name a concrete model id on every codex phase.** Codex does not report its model on the wire, so omitting `model` leaves the run **unpriced**: no cost lands in `syn costs` for that phase.
 - **`allowed_tools` limits a claude phase and is refused on a codex phase** (platform 0.28.0 and later, including 1.0.0):
-  - **claude:** the list is passed as `claude --tools <list>`, so the agent can use only those tools, and the prompt also names them. An empty or omitted list leaves the phase unrestricted. Names are checked against the closed vocabulary, case-insensitively; an unknown name fails install and execution rather than being dropped. `Skill` is added automatically when the phase declares skills. It scopes tools, not commands: a phase granted `Bash` can still run any shell command.
-  - **codex:** codex has no tool-name concept, so a codex phase (or a codex `fallback_agent`) that declares `allowed_tools`, directly or through its frontmatter fallback, is rejected at install and again before execution. Bound a codex phase with `sandbox` instead. `sandbox` is filesystem-only, network egress is available at every level, and a phase that publishes under `artifacts/output/` needs `full-access`.
-  - On 0.26.0 and 0.27.0 the field is accepted and restricts nothing, so do not promise a restriction to installers on those versions.
+  - **claude:** the list is passed as `claude --tools <list>`, so the agent can use only those tools, and the prompt also names them. An empty or omitted list leaves the phase unrestricted. Names are checked against the closed vocabulary, case-insensitively; an unknown name fails install and execution rather than being dropped. On 1.0.0, `Skill` is added automatically to a non-empty list when the phase declares skills. It scopes tools, not commands: a phase granted `Bash` can still run any shell command.
+  - **codex:** codex has no tool-name concept, so a codex phase (or a codex `fallback_agent`) that declares a non-empty `allowed_tools`, directly or through its frontmatter fallback, is rejected at install and again before execution. Bound a codex phase with `sandbox` instead. `sandbox` is filesystem-only, network egress is available at every level, `workspace-write` covers writes under `artifacts/output/` and git commits, and `read-only` is refused for a phase because it cannot write its output.
+  - On 0.26.0 and 0.27.0 the field restricts nothing (0.27.0 already rejects unknown names at install), so do not promise a restriction to installers on those versions.
 - **`sandbox` constrains codex only** today. Declaring `read-only` on a claude phase does not restrict it, so do not document it as a guarantee there.
 - **Claude-only features**: hook events, subagent tracking, TodoWrite, and Claude plugins.
 
@@ -232,6 +232,6 @@ Before submitting or merging a new plugin:
 - [ ] Phase models match complexity. On claude phases that is haiku vs sonnet, on codex phases it is a concrete model id
 - [ ] No `agent` block in any `workflow.yaml` while `min_platform_version` is below `0.26.0` (see section 3a)
 - [ ] Every claude phase's `allowed_tools` (or frontmatter `allowed-tools` fallback) names every tool the phase needs, from the closed vocabulary; it is enforced from platform 0.28.0
-- [ ] No codex phase declares `allowed_tools` in `workflow.yaml` or `allowed-tools` in its frontmatter; it is rejected
+- [ ] No codex phase declares a non-empty `allowed_tools` in `workflow.yaml` or `allowed-tools` in its frontmatter; it is rejected
 - [ ] Workflow runs end-to-end on a clean workspace with only declared inputs provided
 - [ ] `syntropic137-plugin.json` manifest is valid (CI schema validation runs on push)

@@ -71,7 +71,7 @@ DESCRIPTION: $3
 
    For a **codex** phase, omit `model` and `allowed-tools` from the frontmatter.
    Frontmatter `allowed-tools` falls back into the phase, and a codex phase with
-   any `allowed_tools` is rejected at install, because codex has no tool list.
+   a non-empty `allowed_tools` is rejected at install, because codex has no tool list.
    A frontmatter `model:` overrides `agent.model`, so leaving a claude alias
    like `sonnet` there would hand a Claude model name to a codex run. Set the
    concrete model id in the phase's `agent` block in `workflow.yaml` instead:
