@@ -61,7 +61,7 @@ plugins/<name>/
 ---
 model: sonnet                    # claude phases: sonnet, opus, haiku
                                  # codex phases: a concrete model id
-allowed-tools: bash, git, read   # documents intent, enforces nothing, see below
+allowed-tools: Bash, Read        # claude phases only: the tools the agent gets, see below
 argument-hint: "[description]"   # Claude Code argument hint, claude phases only
 ---
 ```
@@ -93,9 +93,17 @@ What differs between the harnesses:
 |---|---|---|
 | Credential | `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` | `CODEX_AUTH_JSON` |
 | `model` | tier alias (`haiku`, `sonnet`, `opus`) | concrete model id, required for pricing |
-| `allowed_tools` | accepted, enforces nothing (ADR-069) | accepted, enforces nothing |
+| `allowed_tools` | enforced: limits which tools the agent can use | refused: the phase is rejected |
 | `sandbox` | declared, not enforced | enforced |
 | Slash commands, plugins, hook events, subagent tracking, TodoWrite | available | not available |
+
+**`allowed_tools` on platform 0.28.0 and later, including 1.0.0:**
+
+- **claude phase:** the list becomes `claude --tools <list>`, so the agent can use only those tools; an empty or omitted list leaves the phase unrestricted. Names come from a closed set (`Bash`, `Edit`, `Glob`, `Grep`, `Read`, `Skill`, `Task`, `WebFetch`, `WebSearch`, `Write`); case is forgiven, any other name (`git`, `LS`) is refused. On 1.0.0, `Skill` is added automatically to a non-empty list when the phase declares skills. It scopes tools, not commands: `Bash` still runs any command.
+- **codex phase:** codex has no tool list, so a codex phase that declares a non-empty `allowed_tools` is refused when the workflow is installed and again before it runs. Bound a codex phase with `sandbox` instead.
+- **Frontmatter fallback:** `allowed-tools` in a phase `.md` file applies only when the phase entry in `workflow.yaml` does not set `allowed_tools`. A `workflow.yaml` value wins, and an explicit `allowed_tools: []` there means unrestricted even if the frontmatter lists tools. The fallback counts for codex too, so a codex phase must omit `allowed-tools` from its frontmatter as well (or set `allowed_tools: []` in `workflow.yaml` to suppress it).
+
+On platform 0.26.0 and 0.27.0, which the current floor still admits, `allowed_tools` restricts nothing (0.27.0 already rejects unknown names at install, against an older vocabulary).
 
 A codex phase that declares no `model` still runs, but the platform records **no cost** for it, because codex does not report its model on the wire.
 
