@@ -29,9 +29,9 @@ DESCRIPTION: $3
    - On a `claude` phase: `haiku` for context gathering, lightweight reads, simple verification passes. `sonnet` for analysis, implementation, decision-making, anything that writes or posts.
    - On a `codex` phase: name a concrete model id. There is no tier alias, and leaving `model` unset in `workflow.yaml` makes the run unpriced, so no cost appears in reports.
 
-5. **Determine allowed-tools** (documents intent only. Per ADR-069 it enforces nothing on either harness, so never treat it as a restriction. `sandbox` is the only real control, and it is not available from this marketplace yet: it needs a 0.28.0 floor and the current floor is 0.26.0):
-   - Always include: `bash, git, read`
-   - Add `edit` only if this phase modifies files
+5. **Determine allowed-tools** (claude phases only. On platform 0.28.0 and later, including 1.0.0, it limits the agent to exactly these tools via `claude --tools`, so list every tool the phase needs. It is a fallback: a `workflow.yaml` `allowed_tools` on the phase wins. A codex phase that declares it is rejected; see step 7):
+   - Always include: `Bash, Read` (`git` is not a tool; git runs through `Bash`, and an unknown name is refused)
+   - Add `Edit` only if this phase modifies files
    - **If edit is included, the phase MUST also commit and push.** Ephemeral constraint: no state carries between phases
 
 6. **Determine artifact name**: derive a kebab-case output artifact name from PHASE_NAME (e.g., "Analyze Changes" gives `findings`, "Gather Context" gives `context`).
@@ -43,7 +43,7 @@ DESCRIPTION: $3
    ```md
    ---
    model: haiku|sonnet
-   allowed-tools: bash, git, read[, edit]
+   allowed-tools: Bash, Read[, Edit]
    description: DESCRIPTION
    ---
 
@@ -70,6 +70,8 @@ DESCRIPTION: $3
    ```
 
    For a **codex** phase, omit `model` and `allowed-tools` from the frontmatter.
+   Frontmatter `allowed-tools` falls back into the phase, and a codex phase with
+   any `allowed_tools` is rejected at install, because codex has no tool list.
    A frontmatter `model:` overrides `agent.model`, so leaving a claude alias
    like `sonnet` there would hand a Claude model name to a codex run. Set the
    concrete model id in the phase's `agent` block in `workflow.yaml` instead:
