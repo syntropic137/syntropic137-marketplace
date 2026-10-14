@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git
+allowed-tools: Bash
 description: Generate categorized release notes from commit history since the last tag
 ---
 

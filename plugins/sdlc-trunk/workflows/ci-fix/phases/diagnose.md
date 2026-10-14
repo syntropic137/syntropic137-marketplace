@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git, read
+allowed-tools: Bash, Read
 description: Diagnose the root cause of a CI failure — do not fix, only diagnose
 ---
 
