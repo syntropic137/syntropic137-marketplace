@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git
+allowed-tools: Bash
 description: Post a structured GitHub PR review from the analysis findings
 ---
 

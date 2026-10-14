@@ -1,6 +1,6 @@
 ---
 model: sonnet
-allowed-tools: bash, git
+allowed-tools: Bash
 description: Transform analysis findings into a posted GitHub PR review
 ---
 

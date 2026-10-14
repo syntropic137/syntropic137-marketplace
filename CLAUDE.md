@@ -150,12 +150,12 @@ Phase files reference previous phases via `{{phase_id}}` in the Variables sectio
 
 ```yaml
 - id: analyze
-  input_artifacts: []             # phase IDs whose outputs to inject
+  input_artifacts: []             # artifact types an earlier phase declares in output_artifacts
   output_artifacts:
     - findings                    # names of files this phase writes
 ```
 
-The `output_artifacts` list is informational metadata; what actually gets collected is everything written to `artifacts/output/`.
+`output_artifacts` declares the artifact types a phase produces, and the platform rejects a workflow whose `input_artifacts` names a type that no earlier phase declares and no workflow input provides (a phase id is not a type: `analyze` is wrong where `findings` is right). What actually gets collected is everything written to `artifacts/output/`.
 
 ## 5. Ephemeral Phase Constraint (CRITICAL)
 

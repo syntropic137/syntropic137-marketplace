@@ -111,14 +111,14 @@ python3 -c "import yaml,json,sys; json.dump(yaml.safe_load(open('plugins/my-plug
        order: 1
        execution_type: sequential
        prompt_file: phases/execute.md
-       allowed_tools: [bash, git, read]
+       allowed_tools: [Bash, Read]
    ```
 
 4. **Write phase prompts** (`phases/execute.md`):
    ```markdown
    ---
    model: sonnet
-   allowed-tools: bash, git, read
+   allowed-tools: Bash, Read
    ---
 
    # Phase prompt
