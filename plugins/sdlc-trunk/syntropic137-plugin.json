@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "name": "sdlc-trunk",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Full trunk-based development lifecycle with AI agents — PR review, CI self-healing, and release preparation",
   "author": "syntropic137",
   "license": "MIT",
